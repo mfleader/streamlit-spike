@@ -2,10 +2,9 @@ import pandas as pd
 import streamlit as st
 import sqlmodel as sqm
 from sqlmodel import select
-from plotly.tools import mpl_to_plotly as ggplotly
 import plotnine as p9
 
-# import config
+
 from model import Run_Metrics
 import small_data
 import ix_table
