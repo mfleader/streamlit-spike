@@ -14,7 +14,7 @@ vyper-config = "^1.1.1"
 sqlmodel = "^0.0.6"
 psycopg2 = "^2.9.3"
 plotly = "^5.9.0"
-plotnine = "^0.8.0"
+plotnine = ">=0.8.0"
 
 [tool.poetry.dev-dependencies]
 
