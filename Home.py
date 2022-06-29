@@ -5,7 +5,7 @@ from sqlmodel import select
 from plotly.tools import mpl_to_plotly as ggplotly
 import plotnine as p9
 
-import config
+# import config
 from model import Run_Metrics
 import small_data
 import ix_table
@@ -66,15 +66,15 @@ def filter_data(
 def main():
     job_id = '0fd17f48-node-density-20220601'
 
-    cfg = config.get_config()
+    # cfg = config.get_config()
     engine = sqm.create_engine(
         url = (
-            f"{cfg.get('database.dialect')}://"
-            f"{cfg.get('database.user')}:"
-            f"{cfg.get('database.password')}@"
-            f"{cfg.get('database.server_url')}:"
-            f"{cfg.get('database.port')}/"
-            f"{cfg.get('database.name')}"),
+            f"{st.secrets['database']['dialect']}://"
+            f"{st.secrets['database']['user']}:"
+            f"{st.secrets['database']['password']}@"
+            f"{st.secrets['database']['server_url']}:"
+            f"{st.secrets['database']['port']}/"
+            f"{st.secrets['database']['name']}"),
         echo = True
     )
 
