@@ -6,7 +6,6 @@ import plotnine as p9
 
 
 from model import Run_Metrics
-import small_data
 import ix_table
 
 
@@ -17,55 +16,18 @@ import ix_table
 #         """
 # st.markdown(hide_menu_style, unsafe_allow_html=True)
 
-default_system_metrics = [
-    "ninetyNinthEtcdDiskBackendCommitDurationSeconds_avg",
-    "ninetyNinthEtcdDiskWalFsyncDurationSeconds_avg",
-    "readOnlyAPICallsLatency_avg",
-    "mutatingAPICallsLatency_avg",
-    "podLatencyMeasurement_avg",
-    "podLatencyQuantilesMeasurement_avg",
-    "serviceSyncLatency_avg",
-    "nodeCPU_Masters_avg",
-    "podStatusCount_avg"
-]
 
 
-@st.experimental_memo
-def filter_data(
-    df: pd.DataFrame, account_selections: list[str], symbol_selections: list[str]
-) -> pd.DataFrame:
-    """
-    Returns Dataframe with only accounts and symbols selected
-    Args:
-        df (pd.DataFrame): tidy data
-        account_selections (list[str]): list of account names to include
-        symbol_selections (list[str]): list of symbols to include
-    Returns:
-        pd.DataFrame: data only for the given accounts and symbols
-    """
-    df = df.copy()
-    df = df[
-        df.account_name.isin(account_selections) & df.symbol.isin(symbol_selections)
-    ]
 
-    return df
-
-
-#  0fd17f48-node-density-20220601
-#  889f9087-node-density-20220608
-#  903e0658-node-density-20220506
-#  099df96e-node-density-20220601
-#  a91d1a8d-node-density-20220525
-#  58e53ccf-node-density-heavy-20220601
-#  a8a27db7-node-density-cni-20220601
-#  5d6138f5-node-density-cni-20220525
+# @st.experimental_singleton
+def get_session(_engine):
+    with sqm.Session(_engine) as session:
+        yield session
 
 
 
 def main():
-    job_id = '0fd17f48-node-density-20220601'
 
-    # cfg = config.get_config()
     engine = sqm.create_engine(
         url = (
             f"{st.secrets['database']['dialect']}://"
@@ -76,29 +38,17 @@ def main():
             f"{st.secrets['database']['name']}"),
         echo = True
     )
+    session = next(get_session(engine))
+    job_uuids = session.exec(
+        select(Run_Metrics.uuid)
+    ).all()
+    data = session.exec(
+        select(Run_Metrics)
+    ).all()
 
-    with sqm.Session(engine) as session:
-        # run_metrics = session.exec(
-        #     select(Run_Metrics).where(Run_Metrics.uuid == job_id)
-        # )
-        # print(run_metrics)
-        job_uuids = session.exec(
-            select(Run_Metrics.uuid)
-        ).all()
-        data = session.exec(
-            select(Run_Metrics)
-        ).all()
-
-
-    df = pd.DataFrame.from_records(
+    df_og = pd.DataFrame.from_records(
         (d.dict() for d in data)
     )
-
-    # print(df)
-
-    # print(job_uuids)
-
-    # print(df['uuid'])
 
 
     st.set_page_config(
@@ -108,64 +58,63 @@ def main():
 
     has_job_ids = st.radio(
         'Do you know the workload job UUIDs?',
-        ['yes', 'only one', 'no']
+        ['yes', 'no']
     )
 
-    # print(df)
-    # print('======================')
-    # print(df.isnull())
-    # print('======================')
-    # print(df.isna())
-    # print('======================')
-
-
-
     if has_job_ids == 'yes':
-        col_a, col_b = st.columns(2)
-        # job_uuids = list(df['uuid'])
+        # col_a, col_b = st.columns(2)
 
-        with col_a:
-            job_a = st.selectbox(
-                'Group A Job UUID',
-                options=job_uuids,
-            )
 
-        with col_b:
-            job_b = st.selectbox(
-                'Group B Job UUID',
-                options=job_uuids,
-            )
-        ix_table.main(
-            df[df['uuid'].isin((job_a, job_b))]
-        )
-    elif has_job_ids == 'only one':
+        # with col_a:
+        #     job_a = st.selectbox(
+        #         'Group A Job UUID',
+        #         options=job_uuids,
+        #     )
 
-        job_uuids = list(df['uuid'])
+        # with col_b:
+        #     job_b = st.multiselect(
+        #         'Group B Job UUID',
+        #         options=job_uuids,
+        #     )
 
-        job_a = st.selectbox(
-            'Group A Job UUID',
-            options=job_uuids,
-        )
+        grid = ix_table.main(pd.DataFrame(df_og['uuid']))
+        # print(job_uuids['data'])
+        print(grid['selected_rows'])
+        df = df_og[df_og['uuid'].isin(grid['selected_rows'])]
+        print(df)
 
-        platforms = list(df['platform'].unique())
-        platform_selections = st.multiselect(
-            'Cloud Platform',
-            options=platforms,
-            default=platforms
-        )
-        df = df[df['platform'].isin(platform_selections)]
-        ix_table.main(
-            df[df['uuid'] == job_a]
-        )
+    # elif has_job_ids == 'only one':
 
+    #     job_uuids = list(df['uuid'])
+
+    #     job_a = st.selectbox(
+    #         'Group A Job UUID',
+    #         options=job_uuids,
+    #     )
+
+    #     platforms = list(df['platform'].unique())
+    #     platform_selections = st.multiselect(
+    #         'Cloud Platform',
+    #         options=platforms,
+    #         default=platforms
+    #     )
+    #     df = df[df['platform'].isin(platform_selections)]
+    #     grid = ix_table.main(
+    #         df[df['uuid'] == job_a]
+    #     )
     elif has_job_ids == 'no':
         st.write("Go ahead, click on a row in the table below!")
-        ix_table.main(df)
+        grid = ix_table.main(df_og)
+        df = grid['data']
 
+    if grid:
+        st.write("You selected:")
+        st.json(grid["selected_rows"])
 
     st.markdown("Quantitative Statistics")
     st.sidebar.subheader("Graph Settings")
     chart_choice = st.sidebar.radio("",["QQplot","Boxplot","Histogram"])
+    # df = grid['data']
     p = p9.ggplot(df)
     top = st.columns((1,1))
     bottom = st.columns(1)
