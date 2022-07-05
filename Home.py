@@ -9,6 +9,7 @@ from scipy.stats import lognorm, norm, invgauss, invgamma, gamma
 
 import statistics as stats
 from math import log, exp
+from dataclasses import dataclass
 
 
 from model import Run_Metrics
@@ -21,6 +22,23 @@ import ix_table
 #         </style>
 #         """
 # st.markdown(hide_menu_style, unsafe_allow_html=True)
+
+
+
+class PerformanceRange:
+    great_lo: float = 0
+    great_hi: float = 0
+    poor_hi: float = 0
+    bad_hi: float = 0
+
+    def __init__(self, sr: pd.Series, great_hi: float = None):
+        if great_hi:
+            self.great_hi = great_hi
+        else:
+            self.great_hi = sr.quantile(q=.1)
+        self.great_lo = sr.min()
+        self.bad_hi = sr.max()
+        self.poor_hi = self.great_hi + .5 * (self.bad_hi - self.great_hi)
 
 
 
@@ -43,6 +61,62 @@ def get_engine():
             f"{st.secrets['database']['name']}"),
         # echo = True
     )
+
+
+def histogram_w_highlights(df: pd.DataFrame, job_selection: str, bins, kpi: str, highlights: PerformanceRange ):
+
+    # print(df[kpi])
+    selected_job_result = df[df['uuid'] == job_selection][kpi]
+
+    p = p9.ggplot(df)
+    p = p + p9.geom_histogram(p9.aes(kpi), color="darkblue", fill="lightblue", bins = bins) +\
+    p9.geom_vline(xintercept = selected_job_result) +\
+    p9.annotate(
+        geom='text',
+        label='your selected job',
+        x = selected_job_result,
+        y = -300, ) +\
+    p9.annotate(geom='rect',
+        xmin = highlights.great_lo,
+        xmax = highlights.great_hi,
+        ymin = -50, ymax = 0,
+        fill = 'green') +\
+    p9.annotate(geom='text', label='great', color = 'green', x = highlights.great_lo, y = -800, )
+
+    if highlights.poor_hi > highlights.great_hi:
+        p = p + p9.annotate(
+            geom='rect',
+            xmin = highlights.great_hi,
+            xmax = highlights.poor_hi,
+            ymin = -50, ymax = 0, fill = 'yellow') +\
+        p9.annotate(geom='text', label='slow disk', color = 'yellow',
+            x = highlights.great_hi, y = -800, ) +\
+        p9.annotate(
+            geom='rect',
+            xmin = highlights.poor_hi,
+            xmax = highlights.bad_hi,
+            ymin = -50, ymax = 0, fill = 'red')
+
+
+    return p
+
+
+def simulated_draws(sample: pd.Series, n_draws: int = 10_000):
+    summary = sample.describe()
+    return gamma.rvs(
+        size = n_draws,
+        a = summary.loc['count'],
+        loc = summary.loc['mean'],
+        scale = summary.loc['std']
+    )
+
+
+def model_data_world(df: pd.DataFrame, kpi: str):
+    return pd.concat((
+        df[['uuid', kpi]],
+        pd.DataFrame.from_records(
+            ({'uuid': 'sim', kpi: x} for x in simulated_draws(df[kpi])))
+    ))
 
 
 
@@ -81,16 +155,7 @@ def main():
     df_og['pod_start_latency'] = df_og['podlatencyquantilesmeasurement_containersready_avg_p99'] -\
         df_og['podlatencyquantilesmeasurement_podscheduled_avg_p99']
 
-    psl_sumry = df_og['pod_start_latency'].describe()
-    # print('============================')
 
-
-
-    # print(psl_sumry)
-    # print(psl_sumry.columns)
-    # print(psl_sumry.index)
-
-    N = 10000
     # print(log(psl_sumry.loc['mean']))
     # print(log(psl_sumry.loc['std']))
     # pod_latency_rng = norm.rvs(
@@ -111,55 +176,59 @@ def main():
     #     ({'uuid': 'sim', 'pod_start_latency': x} for x in pod_latency_rng)
     # )
 
-    pod_latency_rng = gamma.rvs(
-        size = N,
-        a = psl_sumry.loc['count'],
-        loc = psl_sumry.loc['mean'],
-        scale = psl_sumry.loc['std']
+
+    pod_start_ltcy_bins = st.slider("Number of Pod Start Latency Bins", min_value=1,max_value=40, value=22)
+    pod_start_latency = model_data_world(df_og, 'pod_start_latency')
+    pod_start_ltcy_grade_scale = PerformanceRange(
+        pod_start_latency['pod_start_latency']
     )
-    df_sim = pd.DataFrame.from_records(
-        ({'uuid': 'sim', 'pod_start_latency': x} for x in pod_latency_rng)
+    p1 = histogram_w_highlights(
+        df=pod_start_latency,
+        job_selection=job_selection,
+        kpi='pod_start_latency',
+        highlights=pod_start_ltcy_grade_scale,
+        bins = pod_start_ltcy_bins,
     )
-
-    df_concat = pd.concat((df_og[['uuid', 'pod_start_latency']], df_sim))
-
-    p = p9.ggplot(df_concat)
-
-    dfc_sumry = df_concat.describe()
-
-    x_intercept = df_concat[df_concat['uuid'] == job_selection]['pod_start_latency']
-
-    bins = st.slider("Number of Bins", min_value=1,max_value=40, value=22)
-    p = p + p9.geom_histogram(p9.aes('pod_start_latency'), color="darkblue", fill="lightblue", bins = bins) +\
-        p9.geom_vline(xintercept = x_intercept) +\
-        p9.annotate(
-            geom='text',
-            label='your selected job',
-            # hjust = 1,
-            x = x_intercept + 500000,
-            y = -300, ) +\
-        p9.annotate(geom='rect', xmin = 0, xmax = 3 * dfc_sumry.loc['std'], ymin = -50, ymax = 0, fill = 'green') +\
-        p9.annotate(geom='text', label='great', color = 'green', x = 500000, y = -100, ) +\
-        p9.annotate(
-            geom='rect',
-            xmin = 3 * dfc_sumry.loc['std'],
-            xmax = 6 * dfc_sumry.loc['std'],
-            ymin = -50, ymax = 0, fill = 'yellow') +\
-        p9.annotate(geom='text', label='poor', color = 'yellow', x = 3 * dfc_sumry.loc['std'] + 500000, y = -100, ) +\
-        p9.annotate(
-            geom='rect',
-            xmin = 6 * dfc_sumry.loc['std'],
-            xmax = dfc_sumry.loc['max'],
-            ymin = -50, ymax = 0, fill = 'red') +\
-        p9.scale_x_reverse()
-    st.pyplot(p9.ggplot.draw(p))
-
-    # df = df_og
+    st.pyplot(p9.ggplot.draw(p1))
 
 
 
 
+    st.markdown('Etcd Health')
 
+
+    with st.expander('Etcd Health Advanced'):
+        etcd_write_dur_bins = st.slider("Number of Slow Disk Bins", min_value=1,max_value=40, value=22)
+        etcd_write_dur = model_data_world(df_og, 'p99thetcddiskwalfsyncdurationseconds_avg')
+        etcd_writes_dur_grade_scale = PerformanceRange(
+            etcd_write_dur['p99thetcddiskwalfsyncdurationseconds_avg'],
+            great_hi=.01)
+        p2 = histogram_w_highlights(
+            df=etcd_write_dur,
+            job_selection=job_selection,
+            kpi='p99thetcddiskwalfsyncdurationseconds_avg',
+            highlights=etcd_writes_dur_grade_scale,
+            bins = etcd_write_dur_bins
+        )
+        st.pyplot(p9.ggplot.draw(p2))
+
+
+        etcd_leader_chg_rate_bins = st.slider("Number of Leader Rate Bins", min_value=1,max_value=40, value=22)
+        etcd_leader_chg_rate = model_data_world(df_og, 'etcdleaderchangesrate_max')
+        etcd_leader_chg_rate_grade_scale = PerformanceRange(
+            etcd_leader_chg_rate['etcdleaderchangesrate_max']
+        )
+        p3 = histogram_w_highlights(
+            df=etcd_leader_chg_rate,
+            job_selection=job_selection,
+            kpi='etcdleaderchangesrate_max',
+            highlights=etcd_leader_chg_rate_grade_scale,
+            bins = etcd_leader_chg_rate_bins
+        )
+        st.pyplot(p9.ggplot.draw(p3))
+
+    # p99thetcdroundtriptimeseconds_avg: float
+    # p99thetcddiskbackendcommitdurationseconds_avg: float
 
 
 
