@@ -12,9 +12,6 @@ from math import log, exp
 from dataclasses import dataclass
 
 
-from model import Run_Metrics
-import ix_table
-
 
 # hide_menu_style = """
 #         <style>
@@ -49,7 +46,7 @@ def get_session(_engine):
         yield session
 
 
-@st.experimental_singleton
+# @st.experimental_singleton
 def get_engine():
     return sqm.create_engine(
         url = (
@@ -61,6 +58,10 @@ def get_engine():
             f"{st.secrets['database']['name']}"),
         # echo = True
     )
+
+
+engine = get_engine()
+from model import Run_Metrics
 
 
 def histogram_w_highlights(df: pd.DataFrame, job_selection: str, bins, kpi: str, highlights: PerformanceRange ):
@@ -126,7 +127,7 @@ def main():
         layout="centered", page_icon="🖱️", page_title="OpenShift KPIs"
     )
 
-    engine = get_engine()
+    # engine = get_engine()
     session = next(get_session(engine))
     job_uuids = session.exec(
         select(Run_Metrics.uuid)
