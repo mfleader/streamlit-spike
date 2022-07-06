@@ -38,6 +38,23 @@ class PerformanceRange:
         self.poor_hi = self.great_hi + .5 * (self.bad_hi - self.great_hi)
 
 
+@dataclass
+class PerformanceRangeHigherBetter:
+    great_lo: float = 0
+    great_hi: float = 0
+    poor_hi: float = 0
+    bad_hi: float = 0
+
+    # def __init__(self, sr: pd.Series, great_lo: float = None):
+    #     if great_lo:
+    #         self.great_lo = great_lo
+    #     else:
+    #         self.great_hi = sr.quantile(q=.1)
+    #     self.great_lo = sr.min()
+    #     self.bad_hi = sr.max()
+    #     self.poor_hi = self.great_hi + .5 * (self.bad_hi - self.great_hi)
+
+
 
 
 # @st.experimental_singleton
@@ -150,32 +167,30 @@ def main():
         options=job_uuids,
     )
 
+    st.markdown('Should I be using a different instance?')
+
+
+    """
+    show dial
+    nodecpu_workers_avg
+    nodecpu_masters_avg
+    """
+
+
+    # worker_cpu_col, control_cpu_col = st.columns(2)
+
+    cpu = df_og[['uuid', 'nodecpu_workers_avg', 'nodecpu_masters_avg']]
+
+
+
+
+    # with st.expander('Cluster Health Advanced'):
+    #     pass
 
     st.markdown("Pod Start Latency")
 
     df_og['pod_start_latency'] = df_og['podlatencyquantilesmeasurement_containersready_avg_p99'] -\
         df_og['podlatencyquantilesmeasurement_podscheduled_avg_p99']
-
-
-    # print(log(psl_sumry.loc['mean']))
-    # print(log(psl_sumry.loc['std']))
-    # pod_latency_rng = norm.rvs(
-    #     size = N,
-    #     loc = log(psl_sumry.loc['mean']),
-    #     scale = log(psl_sumry.loc['std'])
-    # )
-    # df_sim = pd.DataFrame.from_records(
-    #     ({'uuid': 'sim', 'pod_start_latency': x} for x in pod_latency_rng)
-    # )
-
-    # pod_latency_rng = norm.rvs(
-    #     size = N,
-    #     loc = psl_sumry.loc['mean'],
-    #     scale = psl_sumry.loc['std']
-    # )
-    # df_sim = pd.DataFrame.from_records(
-    #     ({'uuid': 'sim', 'pod_start_latency': x} for x in pod_latency_rng)
-    # )
 
 
     pod_start_ltcy_bins = st.slider("Number of Pod Start Latency Bins", min_value=1,max_value=40, value=22)
@@ -196,6 +211,66 @@ def main():
 
 
     st.markdown('Etcd Health')
+
+    # df_og['etcd_health']
+    etcdf = df_og[[
+    'uuid',
+    'p99thetcdroundtriptimeseconds_avg',
+    'p99thetcddiskbackendcommitdurationseconds_avg',
+    'p99thetcddiskwalfsyncdurationseconds_avg',
+    'etcdleaderchangesrate_max'
+    ]]
+
+    etcdf.loc[:,'health_score'] = etcdf[[ 'p99thetcdroundtriptimeseconds_avg',
+    'p99thetcddiskbackendcommitdurationseconds_avg',
+    'p99thetcddiskwalfsyncdurationseconds_avg',
+    'etcdleaderchangesrate_max']].apply(lambda x: x <= x.quantile(q=.5)).astype(int).apply(pd.DataFrame.sum, axis=1)
+
+    etcdf['health_score_pct'] = etcdf['health_score'] / 4
+
+    p_etcd = (
+        p9.ggplot(etcdf[etcdf['uuid'] == job_selection], p9.aes(x='uuid', y='health_score_pct')) +
+        p9.geom_col(p9.aes(fill = 'health_score_pct')) +
+        p9.scale_fill_gradient2(low = 'red', mid = 'yellow', high = 'green') +
+        p9.ylim(0,1) +
+        p9.coord_flip()
+    )
+
+    st.pyplot(p9.ggplot.draw(p_etcd))
+
+    # etcd_health_perfrange = PerformanceRangeHigherBetter(
+    #     etcdf['health_score'],
+    #     great_hi = 4,
+    #     great_lo = 2,
+    #     poor_lo = 1,
+    #     bad_lo = 0)
+
+
+
+
+    # etcd_health = pd.concat((
+    #     df_og[['uuid',
+    #         'p99thetcdroundtriptimeseconds_avg',
+    #         # 'p99thetcddiskbackendcommitdurationseconds_avg',
+    #         'p99thetcddiskwalfsyncdurationseconds_avg',
+    #         # 'etcdleaderchangesrate_max'
+    #         ]],
+    #     pd.DataFrame.from_records(
+    #         ({
+    #             'uuid': 'sim',
+    #             'p99thetcdroundtriptimeseconds_avg': a,
+    #             # 'p99thetcddiskbackendcommitdurationseconds_avg': b,
+    #             'p99thetcddiskwalfsyncdurationseconds_avg': c,
+    #             # 'etcdleaderchangesrate_max': d,
+    #         }
+    #         for a in simulated_draws(df_og['p99thetcdroundtriptimeseconds_avg'])
+    #         # for b in simulated_draws(df_og['p99thetcddiskbackendcommitdurationseconds_avg'])
+    #         for c in simulated_draws(df_og['p99thetcddiskwalfsyncdurationseconds_avg'])
+    #         # for d in simulated_draws(df_og['etcdleaderchangesrate_max'])
+    #         ))
+    # ))
+
+    # print(etcd_health)
 
 
     with st.expander('Etcd Health Advanced'):
@@ -228,8 +303,7 @@ def main():
         )
         st.pyplot(p9.ggplot.draw(p3))
 
-    # p99thetcdroundtriptimeseconds_avg: float
-    # p99thetcddiskbackendcommitdurationseconds_avg: float
+
 
 
 
