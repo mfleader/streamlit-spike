@@ -90,6 +90,11 @@ def histogram_w_highlights(df: pd.DataFrame, job_selection: str, bins, kpi: str,
 
     p = p9.ggplot(df)
     p = p + p9.geom_histogram(p9.aes(kpi), color="darkblue", fill="lightblue", bins = bins) +\
+    p9.annotate(geom='rect',
+        xmin = highlights.great_lo,
+        xmax = highlights.bad_hi,
+        ymin = -2 * bar_height - 10, ymax = -bar_height - 10,
+        fill = '#ffffffc0') +\
     p9.geom_vline(xintercept = selected_job_result) +\
     p9.annotate(
         geom='text',
@@ -102,10 +107,8 @@ def histogram_w_highlights(df: pd.DataFrame, job_selection: str, bins, kpi: str,
         xmax = highlights.great_hi,
         ymin = -bar_height, ymax = 0,
         fill = 'green') +\
-    p9.annotate(geom='text', label='Great', ha = 'left', color = 'white', x = highlights.great_lo + 300, y = -0.5 * bar_height - 30, )
+    p9.annotate(geom='text', label='Great', ha = 'left', color = 'white', x = highlights.great_lo + 600, y = -0.5 * bar_height - 30, )
     p = p + p9.themes.theme_bw() + p9.theme(figure_size = (7, 1.5))
-    p = p + p9.ylim(-500 - bar_height, 1500)
-
     if highlights.poor_hi > highlights.great_hi:
         p = p + p9.annotate(
             geom='rect',
@@ -113,7 +116,7 @@ def histogram_w_highlights(df: pd.DataFrame, job_selection: str, bins, kpi: str,
             xmax = highlights.poor_hi,
             ymin = -bar_height, ymax = 0, fill = '#ffd800') +\
         p9.annotate(geom='text', label='Poor', ha = 'left', color = 'black',
-            x = highlights.great_hi + 300, y = -0.5 * bar_height - 30, ) +\
+            x = highlights.great_hi + 600, y = -0.5 * bar_height - 30, ) +\
         p9.annotate(
             geom='rect',
             xmin = highlights.poor_hi,
