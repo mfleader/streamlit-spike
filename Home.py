@@ -163,54 +163,80 @@ def main():
 
     # with job_uuid_select:
     job_selection = st.selectbox(
-        'Job UUID',
+        'Select a Job UUID',
         options=job_uuids,
     )
 
     st.markdown('Should I be using a different instance?')
 
 
-    """
-    show dial
-    nodecpu_workers_avg
-    nodecpu_masters_avg
-    """
+    # """
+    # show dial
+    # nodecpu_workers_avg
+    # nodecpu_masters_avg
+    # """
 
 
-    # worker_cpu_col, control_cpu_col = st.columns(2)
+    worker_cpu_col, control_cpu_col = st.columns(2)
 
-    cpu = df_og[['uuid', 'nodecpu_workers_avg', 'nodecpu_masters_avg']]
+    control_cpu = df_og[df_og['uuid'] == job_selection]['nodecpu_masters_avg'].values[0]
+    control_cpu_agg = df_og['nodecpu_masters_avg'].median()
+    worker_cpu = df_og[df_og['uuid'] == job_selection]['nodecpu_workers_avg'].values[0]
+    worker_cpu_agg = df_og['nodecpu_workers_avg'].median()
 
+    with control_cpu_col:
+        st.metric(
+            label = 'Control Node CPU Usage',
+            value = round(control_cpu,2),
+            delta = round(control_cpu - control_cpu_agg, 2),
+            delta_color = 'inverse',
+        )
 
-
+    with worker_cpu_col:
+        st.metric(
+            label = 'Worker Node CPU Usage',
+            value = round(worker_cpu,2),
+            delta = round(worker_cpu - worker_cpu_agg,2),
+            delta_color = 'inverse',
+        )
 
     # with st.expander('Cluster Health Advanced'):
     #     pass
 
-    st.markdown("Pod Start Latency")
 
     df_og['pod_start_latency'] = df_og['podlatencyquantilesmeasurement_containersready_avg_p99'] -\
         df_og['podlatencyquantilesmeasurement_podscheduled_avg_p99']
 
+    pod_latency = df_og[df_og['uuid'] == job_selection]['pod_start_latency'].values[0]
+    pod_latency_agg = df_og['pod_start_latency'].median()
 
-    pod_start_ltcy_bins = st.slider("Number of Pod Start Latency Bins", min_value=1,max_value=40, value=22)
-    pod_start_latency = model_data_world(df_og, 'pod_start_latency')
-    pod_start_ltcy_grade_scale = PerformanceRange(
-        pod_start_latency['pod_start_latency']
+    st.metric(
+        label = 'Pod Latency and Comparison to Baseline',
+        value = pod_latency,
+        delta = pod_latency - pod_latency_agg,
+        delta_color = 'inverse',
     )
-    p1 = histogram_w_highlights(
-        df=pod_start_latency,
-        job_selection=job_selection,
-        kpi='pod_start_latency',
-        highlights=pod_start_ltcy_grade_scale,
-        bins = pod_start_ltcy_bins,
-    )
-    st.pyplot(p9.ggplot.draw(p1))
+
+    with st.expander('Pod Latency Advanced'):
+
+        pod_start_ltcy_bins = st.slider("Number of Pod Start Latency Bins", min_value=1,max_value=40, value=22)
+        pod_start_latency = model_data_world(df_og, 'pod_start_latency')
+        pod_start_ltcy_grade_scale = PerformanceRange(
+            pod_start_latency['pod_start_latency']
+        )
+        p1 = histogram_w_highlights(
+            df=pod_start_latency,
+            job_selection=job_selection,
+            kpi='pod_start_latency',
+            highlights=pod_start_ltcy_grade_scale,
+            bins = pod_start_ltcy_bins,
+        )
+        st.pyplot(p9.ggplot.draw(p1))
 
 
 
 
-    st.markdown('Etcd Health')
+    # st.markdown('Etcd Health')
 
     # df_og['etcd_health']
     etcdf = df_og[[
@@ -226,17 +252,28 @@ def main():
     'p99thetcddiskwalfsyncdurationseconds_avg',
     'etcdleaderchangesrate_max']].apply(lambda x: x <= x.quantile(q=.5)).astype(int).apply(pd.DataFrame.sum, axis=1)
 
-    etcdf['health_score_pct'] = etcdf['health_score'] / 4
+    # etcdf['health_score_pct'] = etcdf['health_score'] / 4
 
-    p_etcd = (
-        p9.ggplot(etcdf[etcdf['uuid'] == job_selection], p9.aes(x='uuid', y='health_score_pct')) +
-        p9.geom_col(p9.aes(fill = 'health_score_pct')) +
-        p9.scale_fill_gradient2(low = 'red', mid = 'yellow', high = 'green') +
-        p9.ylim(0,1) +
-        p9.coord_flip()
+    # p_etcd = (
+    #     p9.ggplot(etcdf[etcdf['uuid'] == job_selection], p9.aes(x='uuid', y='health_score_pct')) +
+    #     p9.geom_col(p9.aes(fill = 'health_score_pct')) +
+    #     p9.scale_fill_gradient2(low = 'red', mid = 'yellow', high = 'green') +
+    #     p9.ylim(0,1) +
+    #     p9.coord_flip()
+    # )
+
+    # st.pyplot(p9.ggplot.draw(p_etcd))
+
+    etcd_health_score = etcdf[etcdf['uuid'] == job_selection]['health_score'].values[0]
+    etcd_health_score_agg = etcdf['health_score'].median()
+    delta = etcd_health_score - etcd_health_score_agg
+
+    st.metric(
+        label='Etcd Health Checks Passed and Comparison to Basline',
+        value = str(etcd_health_score) + ' (out of 4)',
+        delta = etcd_health_score - etcd_health_score_agg,
+        delta_color = 'normal'
     )
-
-    st.pyplot(p9.ggplot.draw(p_etcd))
 
     # etcd_health_perfrange = PerformanceRangeHigherBetter(
     #     etcdf['health_score'],
