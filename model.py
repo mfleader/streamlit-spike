@@ -7,6 +7,7 @@ from pydantic import condecimal
 
 class Run_Metrics(SQLModel, table=True):
     __tablename__ = 'run_metrics'
+    __table_args__ = {'extend_existing': True}
     uuid: str = Field(primary_key=True)
     workload: str
     platform: str
