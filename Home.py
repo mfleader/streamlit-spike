@@ -86,35 +86,42 @@ def histogram_w_highlights(df: pd.DataFrame, job_selection: str, bins, kpi: str,
     # print(df[kpi])
     selected_job_result = df[df['uuid'] == job_selection][kpi]
 
+    bar_height = 500
+
     p = p9.ggplot(df)
     p = p + p9.geom_histogram(p9.aes(kpi), color="darkblue", fill="lightblue", bins = bins) +\
+    p9.annotate(geom='rect',
+        xmin = highlights.great_lo,
+        xmax = highlights.bad_hi,
+        ymin = -2 * bar_height - 10, ymax = -bar_height - 10,
+        fill = '#ffffffc0') +\
     p9.geom_vline(xintercept = selected_job_result) +\
     p9.annotate(
         geom='text',
-        label='your selected job',
+        label='◀ Your selected job',
+        ha = 'left',
         x = selected_job_result,
-        y = -300, ) +\
+        y = -350 - bar_height, ) +\
     p9.annotate(geom='rect',
         xmin = highlights.great_lo,
         xmax = highlights.great_hi,
-        ymin = -50, ymax = 0,
+        ymin = -bar_height, ymax = 0,
         fill = 'green') +\
-    p9.annotate(geom='text', label='great', color = 'green', x = highlights.great_lo, y = -800, )
-
+    p9.annotate(geom='text', label='Great', ha = 'left', color = 'white', x = highlights.great_lo + 600, y = -0.5 * bar_height - 30, )
+    p = p + p9.themes.theme_bw() + p9.theme(figure_size = (7, 1.5))
     if highlights.poor_hi > highlights.great_hi:
         p = p + p9.annotate(
             geom='rect',
             xmin = highlights.great_hi,
             xmax = highlights.poor_hi,
-            ymin = -50, ymax = 0, fill = 'yellow') +\
-        p9.annotate(geom='text', label='slow disk', color = 'yellow',
-            x = highlights.great_hi, y = -800, ) +\
+            ymin = -bar_height, ymax = 0, fill = '#ffd800') +\
+        p9.annotate(geom='text', label='Poor', ha = 'left', color = 'black',
+            x = highlights.great_hi + 600, y = -0.5 * bar_height - 30, ) +\
         p9.annotate(
             geom='rect',
             xmin = highlights.poor_hi,
             xmax = highlights.bad_hi,
-            ymin = -50, ymax = 0, fill = 'red')
-
+            ymin = -bar_height, ymax = 0, fill = 'red')
 
     return p
 
