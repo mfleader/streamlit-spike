@@ -27,8 +27,9 @@ class PerformanceRange:
     great_hi: float = 0
     poor_hi: float = 0
     bad_hi: float = 0
+    color: str = 'inverse'
 
-    def __init__(self, sr: pd.Series, great_hi: float = None):
+    def __init__(self, sr: pd.Series, great_hi: float = None, color: str = 'inverse'):
         if great_hi:
             self.great_hi = great_hi
         else:
@@ -187,9 +188,9 @@ def main():
     worker_cpu_col, control_cpu_col = st.columns(2)
 
     control_cpu = df_og[df_og['uuid'] == job_selection]['nodecpu_masters_avg'].values[0]
-    control_cpu_agg = df_og['nodecpu_masters_avg'].median()
+    control_cpu_agg = df_og['nodecpu_masters_avg'].mean()
     worker_cpu = df_og[df_og['uuid'] == job_selection]['nodecpu_workers_avg'].values[0]
-    worker_cpu_agg = df_og['nodecpu_workers_avg'].median()
+    worker_cpu_agg = df_og['nodecpu_workers_avg'].mean()
 
     with control_cpu_col:
         st.metric(
@@ -215,7 +216,7 @@ def main():
         df_og['podlatencyquantilesmeasurement_podscheduled_avg_p99']
 
     pod_latency = df_og[df_og['uuid'] == job_selection]['pod_start_latency'].values[0]
-    pod_latency_agg = df_og['pod_start_latency'].median()
+    pod_latency_agg = df_og['pod_start_latency'].mean()
 
     st.metric(
         label = 'Pod Latency and Comparison to Baseline',
@@ -272,7 +273,7 @@ def main():
     # st.pyplot(p9.ggplot.draw(p_etcd))
 
     etcd_health_score = etcdf[etcdf['uuid'] == job_selection]['health_score'].values[0]
-    etcd_health_score_agg = etcdf['health_score'].median()
+    etcd_health_score_agg = etcdf['health_score'].mean()
     delta = etcd_health_score - etcd_health_score_agg
 
     st.metric(
@@ -292,29 +293,7 @@ def main():
 
 
 
-    # etcd_health = pd.concat((
-    #     df_og[['uuid',
-    #         'p99thetcdroundtriptimeseconds_avg',
-    #         # 'p99thetcddiskbackendcommitdurationseconds_avg',
-    #         'p99thetcddiskwalfsyncdurationseconds_avg',
-    #         # 'etcdleaderchangesrate_max'
-    #         ]],
-    #     pd.DataFrame.from_records(
-    #         ({
-    #             'uuid': 'sim',
-    #             'p99thetcdroundtriptimeseconds_avg': a,
-    #             # 'p99thetcddiskbackendcommitdurationseconds_avg': b,
-    #             'p99thetcddiskwalfsyncdurationseconds_avg': c,
-    #             # 'etcdleaderchangesrate_max': d,
-    #         }
-    #         for a in simulated_draws(df_og['p99thetcdroundtriptimeseconds_avg'])
-    #         # for b in simulated_draws(df_og['p99thetcddiskbackendcommitdurationseconds_avg'])
-    #         for c in simulated_draws(df_og['p99thetcddiskwalfsyncdurationseconds_avg'])
-    #         # for d in simulated_draws(df_og['etcdleaderchangesrate_max'])
-    #         ))
-    # ))
 
-    # print(etcd_health)
 
 
     with st.expander('Etcd Health Advanced'):
