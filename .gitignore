@@ -1,4 +1,6 @@
 .streamlit
+.vscode
+.idea
 
 
 # Byte-compiled / optimized / DLL files
