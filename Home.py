@@ -1,6 +1,7 @@
 import pandas as pd
 import streamlit as st
 import sqlmodel as sqm
+from sqlalchemy.exc import OperationalError
 from sqlmodel import select
 import plotnine as p9
 
@@ -20,6 +21,12 @@ from dataclasses import dataclass
 #         """
 # st.markdown(hide_menu_style, unsafe_allow_html=True)
 
+# import cProfile, pstats
+
+# import gevent
+# profiler = cProfile.Profile()
+
+# profiler.enable()
 
 
 class PerformanceRange:
@@ -74,6 +81,9 @@ def get_engine():
             f"{st.secrets['database']['server_url']}:"
             f"{st.secrets['database']['port']}/"
             f"{st.secrets['database']['name']}"),
+        connect_args = {
+            "options": '-c statement_timeout=1'
+        }
         # echo = True
     )
 
@@ -154,18 +164,26 @@ def main():
 
     # engine = get_engine()
     session = next(get_session(engine))
-    job_uuids = session.exec(
-        select(Run_Metrics.uuid)
-    ).all()
-    data = session.exec(
-        select(Run_Metrics)
-    ).all()
 
 
-
-    df_og = pd.DataFrame.from_records(
-        (d.dict() for d in data)
+    # try:
+    #     with gevent.Timeout(1, False):
+    #         job_uuids = session.exec(
+    #             select(Run_Metrics.uuid)
+    #         ).all()
+    #         data = session.exec(
+    #             select(Run_Metrics)
+    #         ).all()
+    #         df_og = pd.DataFrame.from_records(
+    #             (d.dict() for d in data)
+    #         )
+    # except OperationalError as e:
+    df_og = pd.read_csv(
+        'data/run_metrics_2022-07-08.csv'
     )
+    job_uuids = df_og['uuid'].values.tolist()
+
+
 
     # job_uuid_select = st.columns(1)
 
@@ -457,5 +475,14 @@ def main():
     #     ix_table.main(df)
 
 
+from pstats import SortKey
+
+
 if __name__ == '__main__':
+    # try:
     main()
+    # finally:
+    #     profiler.disable()
+    #     pstat_profile = pstats.Stats(profiler)
+    #     pstat_profile.strip_dirs().sort_stats(SortKey.CUMULATIVE).dump_stats('profile2.bin')
+
