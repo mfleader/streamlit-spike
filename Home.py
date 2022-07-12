@@ -92,7 +92,7 @@ engine = get_engine()
 from model import Run_Metrics
 
 
-def histogram_w_highlights(df: pd.DataFrame, job_selection: str, bins, kpi: str, highlights: PerformanceRange ):
+def histogram_w_highlights(df: pd.DataFrame, job_selection: str, bins, kpi: str, highlights: PerformanceRange, title=None ):
 
     # print(df[kpi])
     selected_job_result = df[df['uuid'] == job_selection][kpi]
@@ -101,6 +101,7 @@ def histogram_w_highlights(df: pd.DataFrame, job_selection: str, bins, kpi: str,
 
     p = p9.ggplot(df)
     p = p + p9.geom_histogram(p9.aes(kpi), color="darkblue", fill="lightblue", bins = bins) +\
+    p9.labels.ggtitle(title) +\
     p9.annotate(geom='rect',
         xmin = highlights.great_lo,
         xmax = highlights.bad_hi,
@@ -164,36 +165,35 @@ def main():
 
     st.title('OpenShift Performance')
 
+    datasource_container = st.container()
 
+    with datasource_container:
+        st.subheader('Data Sources')
+        selected_datasource = st.radio("Select a Source:", ("PostgreSQL DB", "CSV"))
 
-    selected_datasource = st.radio("Data Source:", ("PostgreSQL DB", "CSV"))
+        if selected_datasource == "PostgreSQL DB":
+            engine = get_engine()
+            session = next(get_session(engine))
 
-    if selected_datasource == "PostgreSQL DB":
-        engine = get_engine()
-        session = next(get_session(engine))
-
-
-
-        job_uuids = session.exec(
-            select(Run_Metrics.uuid)
-        ).all()
-        data = session.exec(
-            select(Run_Metrics)
-        ).all()
-        df_og = pd.DataFrame.from_records(
-            (d.dict() for d in data)
-        )
-    elif selected_datasource == "CSV":
-        df_og = pd.read_csv(
-            'data/run_metrics_2022-07-08.csv'
-        )
-    job_uuids = df_og['uuid'].values.tolist()
+            job_uuids = session.exec(
+                select(Run_Metrics.uuid)
+            ).all()
+            data = session.exec(
+                select(Run_Metrics)
+            ).all()
+            df_og = pd.DataFrame.from_records(
+                (d.dict() for d in data)
+            )
+        elif selected_datasource == "CSV":
+            df_og = pd.read_csv(
+                'data/run_metrics_2022-07-08.csv'
+            )
+        job_uuids = df_og['uuid'].values.tolist()
 
 
 
     # job_uuid_select = st.columns(1)
 
-    print()
 
     # with job_uuid_select:
     job_selection = st.selectbox(
@@ -203,22 +203,29 @@ def main():
 
     cluster_info_col = st.container()
 
+    print(df_og[df_og['uuid'] == job_selection]['timestamp'].values[0])
+
     with cluster_info_col:
-        st.metric(
-            label = 'Platform',
-            value = df_og[df_og['uuid'] == job_selection]['platform'].values[0]
-        )
+        st.subheader('Your Cluster')
         st.metric(
             label = 'OpenShift Version',
             value = df_og[df_og['uuid'] == job_selection]['ocp_version'].values[0]
         )
         st.metric(
+            label = 'Platform',
+            value = df_og[df_og['uuid'] == job_selection]['platform'].values[0]
+        )
+        st.metric(
             label = 'Container Network Interface (CNI)',
             value = df_og[df_og['uuid'] == job_selection]['sdn_type'].values[0]
         )
+        st.metric(
+            label = 'Data Collection Date',
+            value = str(pd.Timestamp.utcfromtimestamp(int(df_og[df_og['uuid'] == job_selection]['timestamp'].values[0] / 1_000_000)))
+        )
 
 
-    st.markdown('Should I be using a different instance?')
+    st.header('Should I be using a different instance?')
 
 
     worker_cpu_col, control_cpu_col = st.columns(2)
@@ -274,6 +281,7 @@ def main():
             kpi='pod_start_latency',
             highlights=pod_start_ltcy_grade_scale,
             bins = pod_start_ltcy_bins,
+            title = 'Pod Start Latency (ms)'
         )
         st.pyplot(p9.ggplot.draw(p1))
 
@@ -343,7 +351,8 @@ def main():
             job_selection=job_selection,
             kpi='p99thetcddiskwalfsyncdurationseconds_avg',
             highlights=etcd_writes_dur_grade_scale,
-            bins = etcd_write_dur_bins
+            bins = etcd_write_dur_bins,
+            title = 'ectd 99th disk WAL fsync latency (s)'
         )
         st.pyplot(p9.ggplot.draw(p2))
 
@@ -358,7 +367,8 @@ def main():
             job_selection=job_selection,
             kpi='etcdleaderchangesrate_max',
             highlights=etcd_leader_chg_rate_grade_scale,
-            bins = etcd_leader_chg_rate_bins
+            bins = etcd_leader_chg_rate_bins,
+            title = 'etcd Leader Change Rate'
         )
         st.pyplot(p9.ggplot.draw(p3))
 
