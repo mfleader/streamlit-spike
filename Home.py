@@ -162,6 +162,10 @@ def main():
         layout="centered", page_icon="🖱️", page_title="OpenShift KPIs"
     )
 
+    st.title('OpenShift Performance')
+
+
+
     selected_datasource = st.radio("Data Source:", ("PostgreSQL DB", "CSV"))
 
     if selected_datasource == "PostgreSQL DB":
@@ -189,20 +193,32 @@ def main():
 
     # job_uuid_select = st.columns(1)
 
+    print()
+
     # with job_uuid_select:
     job_selection = st.selectbox(
         'Select a Job UUID',
         options=job_uuids,
     )
 
+    cluster_info_col = st.container()
+
+    with cluster_info_col:
+        st.metric(
+            label = 'Platform',
+            value = df_og[df_og['uuid'] == job_selection]['platform'].values[0]
+        )
+        st.metric(
+            label = 'OpenShift Version',
+            value = df_og[df_og['uuid'] == job_selection]['ocp_version'].values[0]
+        )
+        st.metric(
+            label = 'Container Network Interface (CNI)',
+            value = df_og[df_og['uuid'] == job_selection]['sdn_type'].values[0]
+        )
+
+
     st.markdown('Should I be using a different instance?')
-
-
-    # """
-    # show dial
-    # nodecpu_workers_avg
-    # nodecpu_masters_avg
-    # """
 
 
     worker_cpu_col, control_cpu_col = st.columns(2)
@@ -239,9 +255,9 @@ def main():
     pod_latency_agg = df_og['pod_start_latency'].mean()
 
     st.metric(
-        label = 'Pod Latency and Comparison to Baseline',
-        value = pod_latency,
-        delta = pod_latency - pod_latency_agg,
+        label = 'Pod Latency (ms) and Comparison to Baseline',
+        value = round(pod_latency, 2),
+        delta = round(pod_latency - pod_latency_agg, 2),
         delta_color = 'inverse',
     )
 
@@ -298,8 +314,8 @@ def main():
 
     st.metric(
         label='Etcd Health Checks Passed and Comparison to Basline',
-        value = str(etcd_health_score) + ' (out of 4)',
-        delta = etcd_health_score - etcd_health_score_agg,
+        value = str(round(etcd_health_score, 2)) + ' (out of 4)',
+        delta = round(etcd_health_score - etcd_health_score_agg, 2),
         delta_color = 'normal'
     )
 
