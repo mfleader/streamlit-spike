@@ -162,25 +162,27 @@ def main():
         layout="centered", page_icon="🖱️", page_title="OpenShift KPIs"
     )
 
-    # engine = get_engine()
-    session = next(get_session(engine))
+    selected_datasource = st.radio("Data Source:", ("PostgreSQL DB", "CSV"))
+
+    if selected_datasource == "PostgreSQL DB":
+        engine = get_engine()
+        session = next(get_session(engine))
 
 
-    # try:
-    #     with gevent.Timeout(1, False):
-    #         job_uuids = session.exec(
-    #             select(Run_Metrics.uuid)
-    #         ).all()
-    #         data = session.exec(
-    #             select(Run_Metrics)
-    #         ).all()
-    #         df_og = pd.DataFrame.from_records(
-    #             (d.dict() for d in data)
-    #         )
-    # except OperationalError as e:
-    df_og = pd.read_csv(
-        'data/run_metrics_2022-07-08.csv'
-    )
+
+        job_uuids = session.exec(
+            select(Run_Metrics.uuid)
+        ).all()
+        data = session.exec(
+            select(Run_Metrics)
+        ).all()
+        df_og = pd.DataFrame.from_records(
+            (d.dict() for d in data)
+        )
+    elif selected_datasource == "CSV":
+        df_og = pd.read_csv(
+            'data/run_metrics_2022-07-08.csv'
+        )
     job_uuids = df_og['uuid'].values.tolist()
 
 
