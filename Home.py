@@ -155,7 +155,7 @@ def model_data_world(df: pd.DataFrame, kpi: str):
             ({'uuid': 'sim', kpi: x} for x in simulated_draws(df[kpi])))
     ))
 
-
+import pyarrow as pa
 
 def main():
 
@@ -228,9 +228,13 @@ def main():
         # )
         df_melt = df_og[['uuid', 'ocp_version', 'platform', 'sdn_type', 'timestamp']].melt('uuid')
         cluster_info = df_melt[df_melt['uuid'] == job_selection][['variable', 'value']]
-        print(cluster_info)
+
+        cluster_info['value'] = cluster_info['value'].astype(str)
+        print(cluster_info.style.hide())
+
+
         st.table(
-            cluster_info
+            cluster_info.style.hide(axis='columns')
         )
         # print(df_og.melt('uuid')[df_og['uuid'] == job_selection][['ocp_version', 'platform', 'sdn_type', 'timestamp']])
         # print(df_og[df_og['uuid'] == job_selection][['ocp_version', 'platform', 'sdn_type', 'timestamp']].stack())
