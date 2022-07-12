@@ -210,18 +210,18 @@ def main():
 
     with cluster_col:
         st.subheader('Your Cluster')
-        # st.metric(
-        #     label = 'OpenShift Version',
-        #     value = df_og[df_og['uuid'] == job_selection]['ocp_version'].values[0]
-        # )
-        # st.metric(
-        #     label = 'Platform',
-        #     value = df_og[df_og['uuid'] == job_selection]['platform'].values[0]
-        # )
-        # st.metric(
-        #     label = 'Container Network Interface (CNI)',
-        #     value = df_og[df_og['uuid'] == job_selection]['sdn_type'].values[0]
-        # )
+        st.metric(
+            label = 'OpenShift Version',
+            value = df_og[df_og['uuid'] == job_selection]['ocp_version'].values[0]
+        )
+        st.metric(
+            label = 'Platform',
+            value = df_og[df_og['uuid'] == job_selection]['platform'].values[0]
+        )
+        st.metric(
+            label = 'Container Network Interface (CNI)',
+            value = df_og[df_og['uuid'] == job_selection]['sdn_type'].values[0]
+        )
         # st.metric(
         #     label = 'Data Collection Date',
         #     value = str(pd.Timestamp.fromtimestamp(int(df_og[df_og['uuid'] == job_selection]['timestamp'].values[0] / 1_000_000),'UTC'))
@@ -230,12 +230,16 @@ def main():
         cluster_info = df_melt[df_melt['uuid'] == job_selection][['variable', 'value']]
 
         cluster_info['value'] = cluster_info['value'].astype(str)
-        print(cluster_info.style.hide())
+        # print(cluster_info.style.hide())
 
 
-        st.table(
-            cluster_info.style.hide(axis='columns')
-        )
+        # st.table(
+            # cluster_info.style.hide(axis='columns')
+            # cluster_info.style.hide_index()
+            # cluster_info.values
+        # )
+
+
         # print(df_og.melt('uuid')[df_og['uuid'] == job_selection][['ocp_version', 'platform', 'sdn_type', 'timestamp']])
         # print(df_og[df_og['uuid'] == job_selection][['ocp_version', 'platform', 'sdn_type', 'timestamp']].stack())
         # st.table(
