@@ -165,9 +165,10 @@ def main():
 
     st.title('OpenShift Performance')
 
+    data_col, cluster_col = st.columns(2)
     datasource_container = st.container()
 
-    with datasource_container:
+    with data_col:
         st.subheader('Data Sources')
         selected_datasource = st.radio("Select a Source:", ("PostgreSQL DB", "CSV"))
 
@@ -190,39 +191,52 @@ def main():
             )
         job_uuids = df_og['uuid'].values.tolist()
 
+            # with job_uuid_select:
+        job_selection = st.selectbox(
+            'Select a Job UUID',
+            options=job_uuids,
+        )
+
 
 
     # job_uuid_select = st.columns(1)
 
 
-    # with job_uuid_select:
-    job_selection = st.selectbox(
-        'Select a Job UUID',
-        options=job_uuids,
-    )
 
-    cluster_info_col = st.container()
 
-    print(df_og[df_og['uuid'] == job_selection]['timestamp'].values[0])
+    # cluster_info_col = st.container()
 
-    with cluster_info_col:
+    # print(df_og[df_og['uuid'] == job_selection]['timestamp'].values[0])
+
+    with cluster_col:
         st.subheader('Your Cluster')
-        st.metric(
-            label = 'OpenShift Version',
-            value = df_og[df_og['uuid'] == job_selection]['ocp_version'].values[0]
+        # st.metric(
+        #     label = 'OpenShift Version',
+        #     value = df_og[df_og['uuid'] == job_selection]['ocp_version'].values[0]
+        # )
+        # st.metric(
+        #     label = 'Platform',
+        #     value = df_og[df_og['uuid'] == job_selection]['platform'].values[0]
+        # )
+        # st.metric(
+        #     label = 'Container Network Interface (CNI)',
+        #     value = df_og[df_og['uuid'] == job_selection]['sdn_type'].values[0]
+        # )
+        # st.metric(
+        #     label = 'Data Collection Date',
+        #     value = str(pd.Timestamp.fromtimestamp(int(df_og[df_og['uuid'] == job_selection]['timestamp'].values[0] / 1_000_000),'UTC'))
+        # )
+        df_melt = df_og[['uuid', 'ocp_version', 'platform', 'sdn_type', 'timestamp']].melt('uuid')
+        cluster_info = df_melt[df_melt['uuid'] == job_selection][['variable', 'value']]
+        print(cluster_info)
+        st.table(
+            cluster_info
         )
-        st.metric(
-            label = 'Platform',
-            value = df_og[df_og['uuid'] == job_selection]['platform'].values[0]
-        )
-        st.metric(
-            label = 'Container Network Interface (CNI)',
-            value = df_og[df_og['uuid'] == job_selection]['sdn_type'].values[0]
-        )
-        st.metric(
-            label = 'Data Collection Date',
-            value = str(pd.Timestamp.utcfromtimestamp(int(df_og[df_og['uuid'] == job_selection]['timestamp'].values[0] / 1_000_000)))
-        )
+        # print(df_og.melt('uuid')[df_og['uuid'] == job_selection][['ocp_version', 'platform', 'sdn_type', 'timestamp']])
+        # print(df_og[df_og['uuid'] == job_selection][['ocp_version', 'platform', 'sdn_type', 'timestamp']].stack())
+        # st.table(
+        #     df_og[df_og['uuid'] == job_selection][['ocp_version', 'platform', 'sdn_type', 'timestamp']].stack()
+        # )
 
 
     st.header('Should I be using a different instance?')
