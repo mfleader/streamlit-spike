@@ -82,7 +82,7 @@ def get_engine():
             f"{st.secrets['database']['port']}/"
             f"{st.secrets['database']['name']}"),
         connect_args = {
-            "options": '-c statement_timeout=1'
+            "options": '-c statement_timeout=10'
         }
         # echo = True
     )
