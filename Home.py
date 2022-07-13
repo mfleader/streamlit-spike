@@ -6,6 +6,7 @@ from sqlmodel import select
 import plotnine as p9
 from PerformanceRange import PerformanceRange
 import gettext
+import config
 
 from scipy.stats import lognorm, norm, invgauss, invgamma, gamma
 # import scipy.stats as scistats
@@ -262,9 +263,8 @@ def main():
 
         pod_start_ltcy_bins = st.slider(_("POD_START_LATENCY_BINS"), min_value=1,max_value=40, value=22)
         pod_start_latency = model_data_world(df_og, 'pod_start_latency')
-        pod_start_ltcy_grade_scale = PerformanceRange(
-            pod_start_latency['pod_start_latency']
-        )
+        pod_start_ltcy_grade_scale = config.get_thresholds("", "", "pod_start_latency", pod_start_latency['pod_start_latency'])
+
         p1 = histogram_w_highlights(
             df=pod_start_latency,
             job_selection=job_selection,
@@ -333,9 +333,8 @@ def main():
     with st.expander(_("ETCD_HEALTH_ADVANCED")):
         etcd_write_dur_bins = st.slider(_("SYNC_DURATION_BINS"), min_value=1,max_value=40, value=22)
         etcd_write_dur = model_data_world(df_og, 'p99thetcddiskwalfsyncdurationseconds_avg')
-        etcd_writes_dur_grade_scale = PerformanceRange(
-            etcd_write_dur['p99thetcddiskwalfsyncdurationseconds_avg'],
-            great_hi=.01)
+        etcd_writes_dur_grade_scale = config.get_thresholds("", "", "etcd_disk_sync_duration",
+            etcd_write_dur['p99thetcddiskwalfsyncdurationseconds_avg'])
         p2 = histogram_w_highlights(
             df=etcd_write_dur,
             job_selection=job_selection,
@@ -349,9 +348,7 @@ def main():
 
         etcd_leader_chg_rate_bins = st.slider(_("LEADER_RATE_CHANGE_BINS"), min_value=1,max_value=40, value=22)
         etcd_leader_chg_rate = model_data_world(df_og, 'etcdleaderchangesrate_max')
-        etcd_leader_chg_rate_grade_scale = PerformanceRange(
-            etcd_leader_chg_rate['etcdleaderchangesrate_max']
-        )
+        etcd_leader_chg_rate_grade_scale = config.get_thresholds("", "", "etcd_leader_change_rate", etcd_leader_chg_rate['etcdleaderchangesrate_max'])
         p3 = histogram_w_highlights(
             df=etcd_leader_chg_rate,
             job_selection=job_selection,
