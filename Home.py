@@ -135,7 +135,6 @@ def main():
     st.title(_("DASHBOARD_TITLE"))
 
     data_col, cluster_col = st.columns(2)
-    datasource_container = st.container()
 
     with data_col:
         st.subheader(_("DATA_SOURCES_TITLE"))
@@ -170,50 +169,40 @@ def main():
 
     # job_uuid_select = st.columns(1)
 
+    cluster_selection_df = df_og.loc[df_og['uuid'] == job_selection]
 
+    similar_clusters = df_og.loc[
+        (df_og['ocp_version'] == cluster_selection_df['ocp_version'].values[0]) &
+        (df_og['platform'] == cluster_selection_df['platform'].values[0]) &
+        (df_og['sdn_type'] == cluster_selection_df['sdn_type'].values[0]) &
+        (df_og['workload'] == cluster_selection_df['workload'].values[0])
+    ]
 
+    # use unmatched cluster data when your matched cluster sample is too small
+    if similar_clusters.shape[0] < 3:
+        similar_clusters = df_og
 
-    # cluster_info_col = st.container()
-
-    # print(df_og[df_og['uuid'] == job_selection]['timestamp'].values[0])
 
     with cluster_col:
         st.subheader(_("CLUSTER_INFO_TITLE"))
         st.metric(
             label = _("OPENSHIFT_VERSION_METRIC"),
-            value = df_og[df_og['uuid'] == job_selection]['ocp_version'].values[0]
+            value = cluster_selection_df['ocp_version'].values[0]
         )
         st.metric(
             label = _("PLATFORM_METRIC"),
-            value = df_og[df_og['uuid'] == job_selection]['platform'].values[0]
+            value = cluster_selection_df['platform'].values[0]
         )
         st.metric(
             label = _("CNI_METRIC"),
-            value = df_og[df_og['uuid'] == job_selection]['sdn_type'].values[0]
+            value = cluster_selection_df['sdn_type'].values[0]
         )
         # st.metric(
         #     label = 'Data Collection Date',
         #     value = str(pd.Timestamp.fromtimestamp(int(df_og[df_og['uuid'] == job_selection]['timestamp'].values[0] / 1_000_000),'UTC'))
         # )
-        #df_melt = df_og[['uuid', 'ocp_version', 'platform', 'sdn_type', 'timestamp']].melt('uuid')
-        #cluster_info = df_melt[df_melt['uuid'] == job_selection][['variable', 'value']]
-
-        #cluster_info['value'] = cluster_info['value'].astype(str)
-        # print(cluster_info.style.hide())
 
 
-        # st.table(
-            # cluster_info.style.hide(axis='columns')
-            # cluster_info.style.hide_index()
-            # cluster_info.values
-        # )
-
-
-        # print(df_og.melt('uuid')[df_og['uuid'] == job_selection][['ocp_version', 'platform', 'sdn_type', 'timestamp']])
-        # print(df_og[df_og['uuid'] == job_selection][['ocp_version', 'platform', 'sdn_type', 'timestamp']].stack())
-        # st.table(
-        #     df_og[df_og['uuid'] == job_selection][['ocp_version', 'platform', 'sdn_type', 'timestamp']].stack()
-        # )
 
 
     st.header(_("DIFF_INSTANCE_Q_TITLE"))
@@ -221,10 +210,10 @@ def main():
 
     worker_cpu_col, control_cpu_col = st.columns(2)
 
-    control_cpu = df_og[df_og['uuid'] == job_selection]['nodecpu_masters_avg'].values[0]
-    control_cpu_agg = df_og['nodecpu_masters_avg'].mean()
-    worker_cpu = df_og[df_og['uuid'] == job_selection]['nodecpu_workers_avg'].values[0]
-    worker_cpu_agg = df_og['nodecpu_workers_avg'].mean()
+    control_cpu = similar_clusters[similar_clusters['uuid'] == job_selection]['nodecpu_masters_avg'].values[0]
+    control_cpu_agg = similar_clusters['nodecpu_masters_avg'].mean()
+    worker_cpu = similar_clusters[similar_clusters['uuid'] == job_selection]['nodecpu_workers_avg'].values[0]
+    worker_cpu_agg = similar_clusters['nodecpu_workers_avg'].mean()
 
     with control_cpu_col:
         st.metric(
@@ -242,15 +231,13 @@ def main():
             delta_color = 'inverse',
         )
 
-    # with st.expander('Cluster Health Advanced'):
-    #     pass
+    similar_clusters['pod_start_latency'] = similar_clusters['podlatencyquantilesmeasurement_containersready_avg_p99'] -\
+        similar_clusters['podlatencyquantilesmeasurement_podscheduled_avg_p99']
 
+    pod_latency = similar_clusters[similar_clusters['uuid'] == job_selection]['pod_start_latency'].values[0]
+    pod_latency_agg = similar_clusters['pod_start_latency'].mean()
 
-    df_og['pod_start_latency'] = df_og['podlatencyquantilesmeasurement_containersready_avg_p99'] -\
-        df_og['podlatencyquantilesmeasurement_podscheduled_avg_p99']
-
-    pod_latency = df_og[df_og['uuid'] == job_selection]['pod_start_latency'].values[0]
-    pod_latency_agg = df_og['pod_start_latency'].mean()
+    print(similar_clusters[[ 'workload', 'uuid', 'pod_start_latency']])
 
     st.metric(
         label = _("POD_LATENCY"),
@@ -262,7 +249,7 @@ def main():
     with st.expander(_("POD_LATENCY_ADVANCED")):
 
         pod_start_ltcy_bins = st.slider(_("POD_START_LATENCY_BINS"), min_value=1,max_value=40, value=22)
-        pod_start_latency = model_data_world(df_og, 'pod_start_latency')
+        pod_start_latency = model_data_world(similar_clusters, 'pod_start_latency')
         pod_start_ltcy_grade_scale = config.get_thresholds("", "", "pod_start_latency", pod_start_latency['pod_start_latency'])
 
         p1 = histogram_w_highlights(
@@ -281,7 +268,7 @@ def main():
     # st.markdown('Etcd Health')
 
     # df_og['etcd_health']
-    etcdf = df_og[[
+    etcdf = similar_clusters[[
     'uuid',
     'p99thetcdroundtriptimeseconds_avg',
     'p99thetcddiskbackendcommitdurationseconds_avg',
@@ -308,7 +295,6 @@ def main():
 
     etcd_health_score = etcdf[etcdf['uuid'] == job_selection]['health_score'].values[0]
     etcd_health_score_agg = etcdf['health_score'].mean()
-    delta = etcd_health_score - etcd_health_score_agg
 
     st.metric(
         label=_("ETCD_HEALTH_CHECKS_PASSED"),
@@ -332,7 +318,7 @@ def main():
 
     with st.expander(_("ETCD_HEALTH_ADVANCED")):
         etcd_write_dur_bins = st.slider(_("SYNC_DURATION_BINS"), min_value=1,max_value=40, value=22)
-        etcd_write_dur = model_data_world(df_og, 'p99thetcddiskwalfsyncdurationseconds_avg')
+        etcd_write_dur = model_data_world(similar_clusters, 'p99thetcddiskwalfsyncdurationseconds_avg')
         etcd_writes_dur_grade_scale = config.get_thresholds("", "", "etcd_disk_sync_duration",
             etcd_write_dur['p99thetcddiskwalfsyncdurationseconds_avg'])
         p2 = histogram_w_highlights(
@@ -347,7 +333,7 @@ def main():
 
 
         etcd_leader_chg_rate_bins = st.slider(_("LEADER_RATE_CHANGE_BINS"), min_value=1,max_value=40, value=22)
-        etcd_leader_chg_rate = model_data_world(df_og, 'etcdleaderchangesrate_max')
+        etcd_leader_chg_rate = model_data_world(similar_clusters, 'etcdleaderchangesrate_max')
         etcd_leader_chg_rate_grade_scale = config.get_thresholds("", "", "etcd_leader_change_rate", etcd_leader_chg_rate['etcdleaderchangesrate_max'])
         p3 = histogram_w_highlights(
             df=etcd_leader_chg_rate,
@@ -490,14 +476,8 @@ def main():
     #     ix_table.main(df)
 
 
-from pstats import SortKey
-
 
 if __name__ == '__main__':
-    # try:
     main()
-    # finally:
-    #     profiler.disable()
-    #     pstat_profile = pstats.Stats(profiler)
-    #     pstat_profile.strip_dirs().sort_stats(SortKey.CUMULATIVE).dump_stats('profile2.bin')
+
 
