@@ -14,6 +14,8 @@ from scipy.stats import lognorm, norm, invgauss, invgamma, gamma
 import statistics as stats
 from math import log, exp
 
+import numpy as np
+
 # Locale Language File
 lang_translations = gettext.translation('lang', localedir='locales/', languages=['en'])
 lang_translations.install()
@@ -68,13 +70,17 @@ def histogram_w_highlights(df: pd.DataFrame, job_selection: str, bins, kpi: str,
 
     bar_height = 500
 
+    print(kpi)
+    print(highlights)
+
     p = p9.ggplot(df)
     p = p + p9.geom_histogram(p9.aes(kpi), color="darkblue", fill="lightblue", bins = bins) +\
     p9.labels.ggtitle(title) +\
     p9.annotate(geom='rect',
         xmin = highlights.great_lo,
         xmax = highlights.bad_hi,
-        ymin = -2 * bar_height - 10, ymax = -bar_height - 10,
+        ymin = -2 * bar_height - 10,
+        ymax = -bar_height - 10,
         fill = '#ffffffc0') +\
     p9.geom_vline(xintercept = selected_job_result) +\
     p9.annotate(
@@ -86,9 +92,10 @@ def histogram_w_highlights(df: pd.DataFrame, job_selection: str, bins, kpi: str,
     p9.annotate(geom='rect',
         xmin = highlights.great_lo,
         xmax = highlights.great_hi,
-        ymin = -bar_height, ymax = 0,
+        ymin = -bar_height,
+        ymax = 0,
         fill = 'green') +\
-    p9.annotate(geom='text', label='Great', ha = 'left', color = 'white', x = highlights.great_lo + 600, y = -0.5 * bar_height - 30, )
+    p9.annotate(geom='text', label='Great', ha = 'left', color = 'white', x = highlights.great_lo, y = -0.5 * bar_height - 30, )
     p = p + p9.themes.theme_bw() + p9.theme(figure_size = (7, 1.5))
     if highlights.poor_hi > highlights.great_hi:
         p = p + p9.annotate(
@@ -97,7 +104,7 @@ def histogram_w_highlights(df: pd.DataFrame, job_selection: str, bins, kpi: str,
             xmax = highlights.poor_hi,
             ymin = -bar_height, ymax = 0, fill = '#ffd800') +\
         p9.annotate(geom='text', label='Poor', ha = 'left', color = 'black',
-            x = highlights.great_hi + 600, y = -0.5 * bar_height - 30, ) +\
+            x = highlights.great_hi, y = -0.5 * bar_height - 30, ) +\
         p9.annotate(
             geom='rect',
             xmin = highlights.poor_hi,
@@ -106,25 +113,34 @@ def histogram_w_highlights(df: pd.DataFrame, job_selection: str, bins, kpi: str,
 
     return p
 
+import math
 
 def simulated_draws(sample: pd.Series, n_draws: int = 10_000):
     summary = sample.describe()
     return gamma.rvs(
         size = n_draws,
         a = summary.loc['count'],
-        loc = summary.loc['mean'],
-        scale = summary.loc['std']
+        loc = .8 * (summary.loc['mean'] + .0000001),
+        scale = summary.loc['std'] + summary.loc['mean'] / 10 + .00000001
+        # scale = 10 * (summary.loc['std'] + 0.0000001)
     )
 
 
+
+
 def model_data_world(df: pd.DataFrame, kpi: str):
+    # simdf = simulated_draws(df[kpi])
+    # print(simdf.describe())
+    # print(np.mean(simdf))
+    # print(np.median(simdf))
+    # print(np.std(simdf))
+    # print(np.max(simdf))
     return pd.concat((
         df[['uuid', kpi]],
         pd.DataFrame.from_records(
             ({'uuid': 'sim', kpi: x} for x in simulated_draws(df[kpi])))
     ))
 
-import pyarrow as pa
 
 def main():
 
@@ -237,7 +253,7 @@ def main():
     pod_latency = similar_clusters[similar_clusters['uuid'] == job_selection]['pod_start_latency'].values[0]
     pod_latency_agg = similar_clusters['pod_start_latency'].mean()
 
-    print(similar_clusters[[ 'workload', 'uuid', 'pod_start_latency']])
+    # print(similar_clusters[[ 'workload', 'uuid', 'pod_start_latency']])
 
     st.metric(
         label = _("POD_LATENCY"),
@@ -303,17 +319,12 @@ def main():
         delta_color = 'normal'
     )
 
-    # etcd_health_perfrange = PerformanceRangeHigherBetter(
-    #     etcdf['health_score'],
-    #     great_hi = 4,
-    #     great_lo = 2,
-    #     poor_lo = 1,
-    #     bad_lo = 0)
 
 
+    print(similar_clusters[[ 'workload', 'uuid', 'p99thetcddiskwalfsyncdurationseconds_avg']])
 
-
-
+    print(similar_clusters[[ 'workload', 'uuid', 'etcdleaderchangesrate_max']])
+    print('=============================================')
 
 
     with st.expander(_("ETCD_HEALTH_ADVANCED")):

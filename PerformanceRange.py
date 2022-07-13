@@ -16,6 +16,15 @@ class PerformanceRange:
         self.great_lo = sr.min()
         self.bad_hi = sr.max()
 
+    def __str__(self):
+        return (
+            f"PerformanceRange("
+            f"great_lo: {self.great_lo}, "
+            f"great_hi: {self.great_hi}, "
+            f"poor_hi: {self.poor_hi}, "
+            f"bad_hi: {self.bad_hi}"
+        )
+
 class QuantilePerfRange(PerformanceRange):
 
     def __init__(self, sr: pd.Series, great_hi: float = None, color: str = 'inverse'):

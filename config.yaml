@@ -5,8 +5,8 @@ thresholds:
     default:
       pod_start_latency:
         great_low: 0
-        great_high: 1000000
-        poor_high: 2000000
+        great_high: 4500
+        poor_high: 7000
         bad_high: -1 # Max value
       etcd_health:
         great_low: 0
@@ -15,11 +15,11 @@ thresholds:
         bad_high: -1 # Max value
       etcd_disk_sync_duration:
         great_low: 0
-        great_high: 5000
-        poor_high: 15000
+        great_high: 0.005
+        poor_high: 0.0090
         bad_high: -1 # Max value
       etcd_leader_change_rate:
         great_low: 0
-        great_high: 0.5
-        poor_high: 5
-        bad_high: -1 # Max value
+        great_high: 1
+        poor_high: 3
+        bad_high: 4 # Max value
