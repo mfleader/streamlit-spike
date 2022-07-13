@@ -1,0 +1,149 @@
+# The default language file
+msgid ""
+msgstr ""
+"Project-Id-Version: 1.0\n"
+"Language: English"
+"POT-Creation-Date: 2022-07-07 17:38-5\n"
+"PO-Revision-Date: 2022-07-07 17:38-5\n"
+"Last-Translator: N/A\n"
+"Language-Team: N/A\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+# Titles
+
+msgid "DASHBOARD_TITLE"
+msgstr "OpenShift Performance"
+
+msgid "DATA_SOURCES_TITLE"
+msgstr "Data Sources"
+
+msgid "CLUSTER_INFO_TITLE"
+msgstr "Your Cluster"
+
+# Selections
+
+msgid "SELECT_DATASOURCE"
+msgstr "Select a Source:"
+
+msgid "SELECT_UUID"
+msgstr "Select a Job UUID"
+
+# Metrics
+
+msgid "OPENSHIFT_VERSION_METRIC"
+msgstr "Openshift Version"
+
+msgid "PLATFORM_METRIC"
+msgstr "Platform"
+
+msgid "CNI_METRIC"
+msgstr "Container Network Interface (CNI)"
+
+# Main section
+
+msgid "DIFF_INSTANCE_Q_TITLE"
+msgstr "Should I be using a different instance?"
+
+msgid "WORKER_NODE_CPU"
+msgstr "Worker Node CPU Usage"
+
+msgid "CONTROL_NODE_CPU"
+msgstr "Control Node CPU Usage"
+
+msgid "POD_LATENCY"
+msgstr "Pod Latency (ms) and Comparison to Baseline"
+
+msgid "ETCD_HEALTH_CHECKS_PASSED"
+msgstr "Etcd Health Checks Passed and Comparison to Basline"
+
+msgid "POD_LATENCY_ADVANCED"
+msgstr "Pod Latency Advanced"
+
+msgid "POD_START_LATENCY_BINS"
+msgstr "Number of Pod Start Latency Bins"
+
+msgid "ETCD_HEALTH_ADVANCED"
+msgstr "Etcd Health Advanced"
+
+msgid "SYNC_DURATION_BINS"
+msgstr "Number of Slow Disk Bins"
+
+msgid "LEADER_RATE_CHANGE_BINS"
+msgstr "Number of Leader Rate Bins"
+
+msgid "POD_START_LATENCY_TITLE"
+msgstr "Pod Start Latency (ms)"
+
+msgid "ETCD_DISK_SYNC_X_AXIS"
+msgstr "Etcd Leader Changes (Max)"
+
+msgid "SYNC_DURATION_CHART_TITLE"
+msgstr "etcd 99th disk WAL fsync latency (s)"
+
+msgid "LEADER_CHANGE_RATE_CHART_TITLE"
+msgstr "etcd Leader Change Rate"
+
+# ================================================== #
+# Explanations for metrics
+
+# Pod latency
+
+msgid "POD_LATENCY_EXPLANATION"
+msgstr "Pod latency is how long it takes a pod to start up while the cluster is under load"
+
+msgid "POD_LATENCY_GOOD"
+msgstr "Pods are taking the expected amount of time to start."
+
+msgid "POD_LATENCY_BELOW_EXPECTATIONS"
+msgstr "Pods are taking a little too long to start. This could mean resources are strained."
+
+msgid "POD_LATENCY_BAD"
+msgstr "Pods are taking much longer than expected to start. Resources are likely strained."
+
+
+# etcd health
+
+msgid "ETCD_HEALTH_EXPLANATION"
+msgstr "Etcd is a critical component of distributed system like OpenShift."
+
+msgid "ETCD_HEALTH_GOOD"
+msgstr "Etcd is passing all included health checks."
+
+msgid "ETCD_HEALTH_BELOW_EXPECTATIONS"
+msgstr "Etcd is failing some health checks! Cluster performance may be degraded. See the advanced metrics for more info."
+
+msgid "ETCD_HEALTH_BAD"
+msgstr "Etcd is failing all included health metrics! Cluster performance will be degraded. See the advanced metrics for more info."
+
+
+# etcd fsync duration
+
+msgid "FSYNC_DURATION_EXPLANATION"
+msgstr "How long it takes to sync etcd log entries to the disk storage."
+
+msgid "FSYNC_DURATION_GOOD"
+msgstr "Sync durations are within expectations."
+
+msgid "FSYNC_DURATION_BELOW_EXPECTATIONS"
+msgstr "Sync durations are taking longer than usual. This could indicate disk issues that could lead to request latency and destabilization of the cluster."
+
+msgid "FSYNC_DURATION_BAD"
+msgstr "Sync durations are taking too long. This indicates disk issues that could lead to request latency and destabilization of the cluster."
+
+# etcd leader changes
+
+msgid "ETCD_LEADER_CHANGES_EXPLANATION"
+msgstr "Etcd is supposed to always have a leader. Leader changes indicate that there is a performance or stability issue with the leader."
+
+msgid "ETCD_LEADER_CHANGES_GOOD"
+msgstr "Etcd leader changes are within expectations."
+
+msgid "ETCD_LEADER_CHANGES_BELOW_EXPECTATIONS"
+msgstr "Etcd leaders changes are greater than expected. The performance may be degraded, and the etcd leader may be less stable."
+
+msgid "ETCD_LEADER_CHANGES_BAD"
+msgstr "Etcd leader changes are happening rapidly. The performance is likely significantly degraded and the leader could be unstable."
+
+

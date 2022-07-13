@@ -4,15 +4,20 @@ import sqlmodel as sqm
 from sqlalchemy.exc import OperationalError
 from sqlmodel import select
 import plotnine as p9
+from PerformanceRange import PerformanceRange
+import gettext
+import config
 
 from scipy.stats import lognorm, norm, invgauss, invgamma, gamma
 # import scipy.stats as scistats
 
 import statistics as stats
 from math import log, exp
-from dataclasses import dataclass
 
-
+# Locale Language File
+lang_translations = gettext.translation('lang', localedir='locales/', languages=['en'])
+lang_translations.install()
+_ = lang_translations.gettext
 
 # hide_menu_style = """
 #         <style>
@@ -27,42 +32,6 @@ from dataclasses import dataclass
 # profiler = cProfile.Profile()
 
 # profiler.enable()
-
-
-class PerformanceRange:
-    great_lo: float = 0
-    great_hi: float = 0
-    poor_hi: float = 0
-    bad_hi: float = 0
-    color: str = 'inverse'
-
-    def __init__(self, sr: pd.Series, great_hi: float = None, color: str = 'inverse'):
-        if great_hi:
-            self.great_hi = great_hi
-        else:
-            self.great_hi = sr.quantile(q=.1)
-        self.great_lo = sr.min()
-        self.bad_hi = sr.max()
-        self.poor_hi = self.great_hi + .5 * (self.bad_hi - self.great_hi)
-
-
-@dataclass
-class PerformanceRangeHigherBetter:
-    great_lo: float = 0
-    great_hi: float = 0
-    poor_hi: float = 0
-    bad_hi: float = 0
-
-    # def __init__(self, sr: pd.Series, great_lo: float = None):
-    #     if great_lo:
-    #         self.great_lo = great_lo
-    #     else:
-    #         self.great_hi = sr.quantile(q=.1)
-    #     self.great_lo = sr.min()
-    #     self.bad_hi = sr.max()
-    #     self.poor_hi = self.great_hi + .5 * (self.bad_hi - self.great_hi)
-
-
 
 
 # @st.experimental_singleton
@@ -163,14 +132,14 @@ def main():
         layout="centered", page_icon="🖱️", page_title="OpenShift KPIs"
     )
 
-    st.title('OpenShift Performance')
+    st.title(_("DASHBOARD_TITLE"))
 
     data_col, cluster_col = st.columns(2)
     datasource_container = st.container()
 
     with data_col:
-        st.subheader('Data Sources')
-        selected_datasource = st.radio("Select a Source:", ("PostgreSQL DB", "CSV"))
+        st.subheader(_("DATA_SOURCES_TITLE"))
+        selected_datasource = st.radio(_("SELECT_DATASOURCE"), ("PostgreSQL DB", "CSV"))
 
         if selected_datasource == "PostgreSQL DB":
             engine = get_engine()
@@ -193,7 +162,7 @@ def main():
 
             # with job_uuid_select:
         job_selection = st.selectbox(
-            'Select a Job UUID',
+            _("SELECT_UUID"),
             options=job_uuids,
         )
 
@@ -209,27 +178,27 @@ def main():
     # print(df_og[df_og['uuid'] == job_selection]['timestamp'].values[0])
 
     with cluster_col:
-        st.subheader('Your Cluster')
+        st.subheader(_("CLUSTER_INFO_TITLE"))
         st.metric(
-            label = 'OpenShift Version',
+            label = _("OPENSHIFT_VERSION_METRIC"),
             value = df_og[df_og['uuid'] == job_selection]['ocp_version'].values[0]
         )
         st.metric(
-            label = 'Platform',
+            label = _("PLATFORM_METRIC"),
             value = df_og[df_og['uuid'] == job_selection]['platform'].values[0]
         )
         st.metric(
-            label = 'Container Network Interface (CNI)',
+            label = _("CNI_METRIC"),
             value = df_og[df_og['uuid'] == job_selection]['sdn_type'].values[0]
         )
         # st.metric(
         #     label = 'Data Collection Date',
         #     value = str(pd.Timestamp.fromtimestamp(int(df_og[df_og['uuid'] == job_selection]['timestamp'].values[0] / 1_000_000),'UTC'))
         # )
-        df_melt = df_og[['uuid', 'ocp_version', 'platform', 'sdn_type', 'timestamp']].melt('uuid')
-        cluster_info = df_melt[df_melt['uuid'] == job_selection][['variable', 'value']]
+        #df_melt = df_og[['uuid', 'ocp_version', 'platform', 'sdn_type', 'timestamp']].melt('uuid')
+        #cluster_info = df_melt[df_melt['uuid'] == job_selection][['variable', 'value']]
 
-        cluster_info['value'] = cluster_info['value'].astype(str)
+        #cluster_info['value'] = cluster_info['value'].astype(str)
         # print(cluster_info.style.hide())
 
 
@@ -247,7 +216,7 @@ def main():
         # )
 
 
-    st.header('Should I be using a different instance?')
+    st.header(_("DIFF_INSTANCE_Q_TITLE"))
 
 
     worker_cpu_col, control_cpu_col = st.columns(2)
@@ -259,7 +228,7 @@ def main():
 
     with control_cpu_col:
         st.metric(
-            label = 'Control Node CPU Usage',
+            label = _("CONTROL_NODE_CPU"),
             value = round(control_cpu,2),
             delta = round(control_cpu - control_cpu_agg, 2),
             delta_color = 'inverse',
@@ -267,7 +236,7 @@ def main():
 
     with worker_cpu_col:
         st.metric(
-            label = 'Worker Node CPU Usage',
+            label = _("WORKER_NODE_CPU"),
             value = round(worker_cpu,2),
             delta = round(worker_cpu - worker_cpu_agg,2),
             delta_color = 'inverse',
@@ -284,26 +253,25 @@ def main():
     pod_latency_agg = df_og['pod_start_latency'].mean()
 
     st.metric(
-        label = 'Pod Latency (ms) and Comparison to Baseline',
+        label = _("POD_LATENCY"),
         value = round(pod_latency, 2),
         delta = round(pod_latency - pod_latency_agg, 2),
         delta_color = 'inverse',
     )
 
-    with st.expander('Pod Latency Advanced'):
+    with st.expander(_("POD_LATENCY_ADVANCED")):
 
-        pod_start_ltcy_bins = st.slider("Number of Pod Start Latency Bins", min_value=1,max_value=40, value=22)
+        pod_start_ltcy_bins = st.slider(_("POD_START_LATENCY_BINS"), min_value=1,max_value=40, value=22)
         pod_start_latency = model_data_world(df_og, 'pod_start_latency')
-        pod_start_ltcy_grade_scale = PerformanceRange(
-            pod_start_latency['pod_start_latency']
-        )
+        pod_start_ltcy_grade_scale = config.get_thresholds("", "", "pod_start_latency", pod_start_latency['pod_start_latency'])
+
         p1 = histogram_w_highlights(
             df=pod_start_latency,
             job_selection=job_selection,
             kpi='pod_start_latency',
             highlights=pod_start_ltcy_grade_scale,
             bins = pod_start_ltcy_bins,
-            title = 'Pod Start Latency (ms)'
+            title = _("POD_START_LATENCY_TITLE")
         )
         st.pyplot(p9.ggplot.draw(p1))
 
@@ -343,7 +311,7 @@ def main():
     delta = etcd_health_score - etcd_health_score_agg
 
     st.metric(
-        label='Etcd Health Checks Passed and Comparison to Basline',
+        label=_("ETCD_HEALTH_CHECKS_PASSED"),
         value = str(round(etcd_health_score, 2)) + ' (out of 4)',
         delta = round(etcd_health_score - etcd_health_score_agg, 2),
         delta_color = 'normal'
@@ -362,35 +330,32 @@ def main():
 
 
 
-    with st.expander('Etcd Health Advanced'):
-        etcd_write_dur_bins = st.slider("Number of Slow Disk Bins", min_value=1,max_value=40, value=22)
+    with st.expander(_("ETCD_HEALTH_ADVANCED")):
+        etcd_write_dur_bins = st.slider(_("SYNC_DURATION_BINS"), min_value=1,max_value=40, value=22)
         etcd_write_dur = model_data_world(df_og, 'p99thetcddiskwalfsyncdurationseconds_avg')
-        etcd_writes_dur_grade_scale = PerformanceRange(
-            etcd_write_dur['p99thetcddiskwalfsyncdurationseconds_avg'],
-            great_hi=.01)
+        etcd_writes_dur_grade_scale = config.get_thresholds("", "", "etcd_disk_sync_duration",
+            etcd_write_dur['p99thetcddiskwalfsyncdurationseconds_avg'])
         p2 = histogram_w_highlights(
             df=etcd_write_dur,
             job_selection=job_selection,
             kpi='p99thetcddiskwalfsyncdurationseconds_avg',
             highlights=etcd_writes_dur_grade_scale,
             bins = etcd_write_dur_bins,
-            title = 'ectd 99th disk WAL fsync latency (s)'
+            title = _("SYNC_DURATION_CHART_TITLE")
         )
         st.pyplot(p9.ggplot.draw(p2))
 
 
-        etcd_leader_chg_rate_bins = st.slider("Number of Leader Rate Bins", min_value=1,max_value=40, value=22)
+        etcd_leader_chg_rate_bins = st.slider(_("LEADER_RATE_CHANGE_BINS"), min_value=1,max_value=40, value=22)
         etcd_leader_chg_rate = model_data_world(df_og, 'etcdleaderchangesrate_max')
-        etcd_leader_chg_rate_grade_scale = PerformanceRange(
-            etcd_leader_chg_rate['etcdleaderchangesrate_max']
-        )
+        etcd_leader_chg_rate_grade_scale = config.get_thresholds("", "", "etcd_leader_change_rate", etcd_leader_chg_rate['etcdleaderchangesrate_max'])
         p3 = histogram_w_highlights(
             df=etcd_leader_chg_rate,
             job_selection=job_selection,
             kpi='etcdleaderchangesrate_max',
             highlights=etcd_leader_chg_rate_grade_scale,
             bins = etcd_leader_chg_rate_bins,
-            title = 'etcd Leader Change Rate'
+            title = _("LEADER_CHANGE_RATE_CHART_TITLE")
         )
         st.pyplot(p9.ggplot.draw(p3))
 
