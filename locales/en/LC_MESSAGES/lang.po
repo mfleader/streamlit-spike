@@ -14,7 +14,7 @@ msgstr ""
 # Titles
 
 msgid "DASHBOARD_TITLE"
-msgstr "OpenShift Performance"
+msgstr "OpenShift Performance Insight"
 
 msgid "DATA_SOURCES_TITLE"
 msgstr "Data Sources"

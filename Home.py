@@ -145,9 +145,40 @@ def main():
 
     st.title(_("DASHBOARD_TITLE"))
 
-    data_col, cluster_col = st.columns(2)
+    # data_col, cluster_col = st.columns(2)
 
-    with data_col:
+    # with data_col:
+    #     st.subheader(_("DATA_SOURCES_TITLE"))
+    #     selected_datasource = st.radio(_("SELECT_DATASOURCE"), ("PostgreSQL DB", "CSV"))
+
+    #     if selected_datasource == "PostgreSQL DB":
+    #         engine = get_engine()
+    #         session = next(get_session(engine))
+
+    #         job_uuids = session.exec(
+    #             select(Run_Metrics.uuid)
+    #         ).all()
+    #         data = session.exec(
+    #             select(Run_Metrics)
+    #         ).all()
+    #         df_og = pd.DataFrame.from_records(
+    #             (d.dict() for d in data)
+    #         )
+    #     elif selected_datasource == "CSV":
+    #         df_og = pd.read_csv(
+    #             'data/run_metrics_2022-07-08.csv'
+    #         )
+    #     job_uuids = df_og['uuid'].values.tolist()
+
+    #         # with job_uuid_select:
+    #     job_selection = st.selectbox(
+    #         _("SELECT_UUID"),
+    #         options=job_uuids,
+    #     )
+
+    data_src_sidebar_container = st.sidebar.container()
+
+    with data_src_sidebar_container:
         st.subheader(_("DATA_SOURCES_TITLE"))
         selected_datasource = st.radio(_("SELECT_DATASOURCE"), ("PostgreSQL DB", "CSV"))
 
@@ -170,14 +201,14 @@ def main():
             )
         job_uuids = df_og['uuid'].values.tolist()
 
-            # with job_uuid_select:
-        job_selection = st.selectbox(
-            _("SELECT_UUID"),
-            options=job_uuids,
-        )
+
+    job_selection = st.selectbox(
+        _("SELECT_UUID"),
+        options=job_uuids,
+    )
 
 
-
+    # st.markdown("""---""")
     # job_uuid_select = st.columns(1)
 
     cluster_selection_df = df_og.loc[df_og['uuid'] == job_selection]
@@ -194,20 +225,49 @@ def main():
         similar_clusters = df_og
 
 
-    with cluster_col:
-        st.subheader(_("CLUSTER_INFO_TITLE"))
+    # with cluster_col:
+    #     st.subheader(_("CLUSTER_INFO_TITLE"))
+    #     st.metric(
+    #         label = _("OPENSHIFT_VERSION_METRIC"),
+    #         value = cluster_selection_df['ocp_version'].values[0]
+    #     )
+    #     st.metric(
+    #         label = _("CNI_METRIC"),
+    #         value = cluster_selection_df['sdn_type'].values[0]
+    #     )
+    #     st.metric(
+    #         label = _("PLATFORM_METRIC"),
+    #         value = cluster_selection_df['platform'].values[0]
+    #     )
+    #     st.metric(
+    #         # label = _("NODE_SIZE"),
+    #         label = 'Node Size',
+    #         value = cluster_selection_df['worker_nodes_type'].values[0]
+    #     )
+
+    cluster_side_container = st.sidebar.container()
+
+    with cluster_side_container:
+        st.header(_("CLUSTER_INFO_TITLE"))
         st.metric(
             label = _("OPENSHIFT_VERSION_METRIC"),
             value = cluster_selection_df['ocp_version'].values[0]
+        )
+        st.metric(
+            label = _("CNI_METRIC"),
+            value = cluster_selection_df['sdn_type'].values[0]
         )
         st.metric(
             label = _("PLATFORM_METRIC"),
             value = cluster_selection_df['platform'].values[0]
         )
         st.metric(
-            label = _("CNI_METRIC"),
-            value = cluster_selection_df['sdn_type'].values[0]
+            # label = _("NODE_SIZE"),
+            label = 'Node Size',
+            value = cluster_selection_df['worker_nodes_type'].values[0]
         )
+
+
         # st.metric(
         #     label = 'Data Collection Date',
         #     value = str(pd.Timestamp.fromtimestamp(int(df_og[df_og['uuid'] == job_selection]['timestamp'].values[0] / 1_000_000),'UTC'))
