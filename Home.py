@@ -1,12 +1,13 @@
 import pandas as pd
+import numpy as np
 import streamlit as st
 import sqlmodel as sqm
 from sqlalchemy.exc import OperationalError
 from sqlmodel import select
-import plotnine as p9
 from PerformanceRange import PerformanceRange
 import gettext
 import config
+import plotly.express as px
 
 from scipy.stats import lognorm, norm, invgauss, invgamma, gamma
 # import scipy.stats as scistats
@@ -66,52 +67,46 @@ from model import Run_Metrics
 def histogram_w_highlights(df: pd.DataFrame, job_selection: str, bins, kpi: str, highlights: PerformanceRange, title=None ):
 
     # print(df[kpi])
-    selected_job_result = df[df['uuid'] == job_selection][kpi]
+    selected_job_result = df[df['uuid'] == job_selection][kpi][0]
 
-    bar_height = 500
+    # Calculate histogram
+    counts, bins = np.histogram(df[kpi], bins=60)
+    bins = 0.5 * (bins[:-1] + bins[1:])
 
-    print(kpi)
-    print(highlights)
+    # Calculate positions
+    max_count = max(counts) + 10
+    highlight_min = max_count * -0.05
+    highlight_max = max_count * -0.28
+    text_position = max_count * -0.18
+    your_job_annotation_position = max_count * -0.3
+    good_x = highlights.great_lo * 0.95 + highlights.great_hi * 0.05
+    poor_x = highlights.great_hi * 0.95 + highlights.poor_hi * 0.05
+    bad_x = highlights.poor_hi * 0.95 + highlights.bad_hi * 0.05
+    # Create bar gragh
+    fig = px.bar(x=bins, y=counts, height=250, labels={ "x": kpi, "y": "count"})
+    # Add graphics to show performance
+    fig.add_shape(type="rect", x0=highlights.great_lo, y0=highlight_min, x1=highlights.great_hi, y1=highlight_max, fillcolor="limegreen")
+    fig.add_shape(type="rect", x0=highlights.great_hi, y0=highlight_min, x1=highlights.poor_hi, y1=highlight_max, fillcolor="yellow")
+    fig.add_shape(type="rect", x0=highlights.poor_hi, y0=highlight_min, x1=highlights.bad_hi, y1=highlight_max, fillcolor="red")
+    fig.add_annotation(text="Good", x = good_x, y=text_position, textangle=0, xanchor='left', showarrow=False,
+        font=dict(size=15, color="black"))
+    fig.add_annotation(text="Poor", x = poor_x, y=text_position, textangle=0, xanchor='left', showarrow=False,
+        font=dict(size=15, color="black"))
+    fig.add_annotation(text="Bad", x = bad_x, y=text_position, textangle=0, xanchor='left', showarrow=False,
+        font=dict(size=15, color="white"))
+    fig.update_yaxes(visible=True, showticklabels=False)
 
-    p = p9.ggplot(df)
-    p = p + p9.geom_histogram(p9.aes(kpi), color="darkblue", fill="lightblue", bins = bins) +\
-    p9.labels.ggtitle(title) +\
-    p9.annotate(geom='rect',
-        xmin = highlights.great_lo,
-        xmax = highlights.bad_hi,
-        ymin = -2 * bar_height - 10,
-        ymax = -bar_height - 10,
-        fill = '#ffffffc0') +\
-    p9.geom_vline(xintercept = selected_job_result) +\
-    p9.annotate(
-        geom='text',
-        label='◀ Your selected job',
-        ha = 'left',
-        x = selected_job_result,
-        y = -350 - bar_height, ) +\
-    p9.annotate(geom='rect',
-        xmin = highlights.great_lo,
-        xmax = highlights.great_hi,
-        ymin = -bar_height,
-        ymax = 0,
-        fill = 'green') +\
-    p9.annotate(geom='text', label='Great', ha = 'left', color = 'white', x = highlights.great_lo, y = -0.5 * bar_height - 30, )
-    p = p + p9.themes.theme_bw() + p9.theme(figure_size = (7, 1.5))
-    if highlights.poor_hi > highlights.great_hi:
-        p = p + p9.annotate(
-            geom='rect',
-            xmin = highlights.great_hi,
-            xmax = highlights.poor_hi,
-            ymin = -bar_height, ymax = 0, fill = '#ffd800') +\
-        p9.annotate(geom='text', label='Poor', ha = 'left', color = 'black',
-            x = highlights.great_hi, y = -0.5 * bar_height - 30, ) +\
-        p9.annotate(
-            geom='rect',
-            xmin = highlights.poor_hi,
-            xmax = highlights.bad_hi,
-            ymin = -bar_height, ymax = 0, fill = 'red')
+    # Indicate where the target job is
+    fig.add_vline(x=selected_job_result, line_color = '#ff33bb')
+    fig.add_annotation(text="Your Job Here", x = selected_job_result, y = 0, xanchor='left', ax=10,
+        font=dict(size=15), arrowsize=2, arrowcolor="white", arrowhead=3)
 
-    return p
+    # Make the bar graph look like a histogram
+    fig.update_layout(bargap = 0)
+    fig.update_traces(
+        marker_line_width=0
+    )
+    return fig
 
 import math
 
@@ -276,7 +271,8 @@ def main():
             bins = pod_start_ltcy_bins,
             title = _("POD_START_LATENCY_TITLE")
         )
-        st.pyplot(p9.ggplot.draw(p1))
+        st.plotly_chart(p1)
+        #st.plotly_chart(p1)
 
 
 
@@ -307,7 +303,7 @@ def main():
     #     p9.coord_flip()
     # )
 
-    # st.pyplot(p9.ggplot.draw(p_etcd))
+    # st.plotly_chart(p_etcd)
 
     etcd_health_score = etcdf[etcdf['uuid'] == job_selection]['health_score'].values[0]
     etcd_health_score_agg = etcdf['health_score'].mean()
@@ -340,7 +336,7 @@ def main():
             bins = etcd_write_dur_bins,
             title = _("SYNC_DURATION_CHART_TITLE")
         )
-        st.pyplot(p9.ggplot.draw(p2))
+        st.plotly_chart(p2)
 
 
         etcd_leader_chg_rate_bins = st.slider(_("LEADER_RATE_CHANGE_BINS"), min_value=1,max_value=40, value=22)
@@ -354,7 +350,7 @@ def main():
             bins = etcd_leader_chg_rate_bins,
             title = _("LEADER_CHANGE_RATE_CHART_TITLE")
         )
-        st.pyplot(p9.ggplot.draw(p3))
+        st.plotly_chart(p3)
 
 
 
@@ -471,7 +467,7 @@ def main():
 
 
     # with top[1]:
-    #     st.pyplot(p9.ggplot.draw(p))
+    #     st.plotly_chart(p)
 
     # with top[0]:
     #     st.write(df[[cv, x]])

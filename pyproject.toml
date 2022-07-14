@@ -2,7 +2,7 @@
 name = "streamlit-spike"
 version = "0.1.0"
 description = ""
-authors = ["mleader <mleader@redhat.com>"]
+authors = ["mleader <mleader@redhat.com>", "joconnel <joconnel@redhat.com>"]
 
 [tool.poetry.dependencies]
 python = ">=3.9,<3.11"
@@ -10,13 +10,13 @@ scipy = "^1.8.1"
 streamlit = "^1.10.0"
 streamlit-aggrid = "^0.2.3"
 sqlmodel = "^0.0.6"
-plotnine = ">=0.8.0"
 psycopg2-binary = "^2.9.3"
 altair = "^4.2.0"
 SQLAlchemy = "^1.4.39"
 gevent = "^21.12.0"
 PyYAML = "^6.0"
 python-gettext = "^4.0"
+plotly = ">=5.0.0"
 
 [tool.poetry.dev-dependencies]
 
