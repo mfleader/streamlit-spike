@@ -55,6 +55,9 @@ msgstr "Worker Node CPU Usage"
 msgid "CONTROL_NODE_CPU"
 msgstr "Control Node CPU Usage"
 
+msgid "POD_LATENCY_Q_TITLE"
+msgstr "Are pods starting as expected?"
+
 msgid "POD_LATENCY"
 msgstr "Pod Latency (ms) and Comparison to Baseline"
 
@@ -66,6 +69,9 @@ msgstr "Pod Latency Advanced"
 
 msgid "POD_START_LATENCY_BINS"
 msgstr "Number of Pod Start Latency Bins"
+
+msgid "ETCD_HEALTH_Q_TITLE"
+msgstr "Is cluster's etcd healthy?"
 
 msgid "ETCD_HEALTH_ADVANCED"
 msgstr "Etcd Health Advanced"
@@ -94,7 +100,7 @@ msgstr "etcd Leader Change Rate"
 # Pod latency
 
 msgid "POD_LATENCY_EXPLANATION"
-msgstr "Pod latency is how long it takes a pod to start up while the cluster is under load"
+msgstr "Pod latency is how long it takes a pod to start up (after being scheduled) while the cluster is under load."
 
 msgid "POD_LATENCY_GOOD"
 msgstr "Pods are taking the expected amount of time to start."
