@@ -312,7 +312,7 @@ def main():
     similar_clusters['pod_start_latency'] = similar_clusters['podlatencyquantilesmeasurement_containersready_avg_p99'] -\
         similar_clusters['podlatencyquantilesmeasurement_podscheduled_avg_p99']
 
-    pod_latency = similar_clusters[similar_clusters['uuid'] == job_selection]['pod_start_latency'].values[0]
+    pod_latency = float(similar_clusters[similar_clusters['uuid'] == job_selection]['pod_start_latency'].values[0])
 
     pod_start_latency = model_data_world(similar_clusters, 'pod_start_latency')
     pod_start_ltcy_grade_scale = config.get_thresholds("", "", "pod_start_latency", pod_start_latency['pod_start_latency'])
