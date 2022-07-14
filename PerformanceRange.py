@@ -25,6 +25,15 @@ class PerformanceRange:
             f"bad_hi: {self.bad_hi}"
         )
 
+    def get_msg_suffix(self, value):
+        if value < self.great_hi:
+            return "_GOOD"
+        elif value < self.poor_hi:
+            return "_BELOW_EXPECTATIONS"
+        elif value > self.poor_hi:
+            return "_BAD"
+        return None
+
 class QuantilePerfRange(PerformanceRange):
 
     def __init__(self, sr: pd.Series, great_hi: float = None, color: str = 'inverse'):

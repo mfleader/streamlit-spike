@@ -70,7 +70,7 @@ def histogram_w_highlights(df: pd.DataFrame, job_selection: str, bins, kpi: str,
     selected_job_result = df[df['uuid'] == job_selection][kpi].values[0]
 
     # Calculate histogram
-    counts, bins = np.histogram(df[kpi], bins=60)
+    counts, bins = np.histogram(df[kpi], bins=bins)
     bins = 0.5 * (bins[:-1] + bins[1:])
 
     # Calculate positions
@@ -83,7 +83,7 @@ def histogram_w_highlights(df: pd.DataFrame, job_selection: str, bins, kpi: str,
     poor_x = highlights.great_hi * 0.95 + highlights.poor_hi * 0.05
     bad_x = highlights.poor_hi * 0.95 + highlights.bad_hi * 0.05
     # Create bar gragh
-    fig = px.bar(x=bins, y=counts, height=250, labels={ "x": kpi, "y": "count"})
+    fig = px.bar(x=bins, y=counts, height=220, labels={ "x": kpi, "y": "count"}, title=title)
     # Add graphics to show performance
     fig.add_shape(type="rect", x0=highlights.great_lo, y0=highlight_min, x1=highlights.great_hi, y1=highlight_max, fillcolor="limegreen")
     fig.add_shape(type="rect", x0=highlights.great_hi, y0=highlight_min, x1=highlights.poor_hi, y1=highlight_max, fillcolor="yellow")
@@ -101,8 +101,8 @@ def histogram_w_highlights(df: pd.DataFrame, job_selection: str, bins, kpi: str,
     fig.add_annotation(text="Your Job Here", x = selected_job_result, y = 0, xanchor='left', ax=10,
         font=dict(size=15), arrowsize=2, arrowcolor="white", arrowhead=3)
 
-    # Make the bar graph look like a histogram
-    fig.update_layout(bargap = 0)
+    # Make the bar graph look like a histogram and fit properly
+    fig.update_layout(bargap = 0, margin=dict(l=20, r=20, t=40, b=20))
     fig.update_traces(
         marker_line_width=0
     )
@@ -140,7 +140,7 @@ def model_data_world(df: pd.DataFrame, kpi: str):
 def main():
 
     st.set_page_config(
-        layout="centered", page_icon="🖱️", page_title="OpenShift KPIs"
+        layout="wide", page_icon="🖱️", page_title="OpenShift KPIs"
     )
 
     st.title(_("DASHBOARD_TITLE"))
@@ -275,6 +275,9 @@ def main():
 
 
 
+    # ========================================================= #
+    # Different instance section
+    # ========================================================= #
     st.header(_("DIFF_INSTANCE_Q_TITLE"))
 
 
@@ -301,44 +304,56 @@ def main():
             delta_color = 'inverse',
         )
 
+    # ========================================================= #
+    # Pod latency section
+    # ========================================================= #
+
+    # Calculations
     similar_clusters['pod_start_latency'] = similar_clusters['podlatencyquantilesmeasurement_containersready_avg_p99'] -\
         similar_clusters['podlatencyquantilesmeasurement_podscheduled_avg_p99']
 
-    pod_latency = similar_clusters[similar_clusters['uuid'] == job_selection]['pod_start_latency'].values[0]
-    pod_latency_agg = similar_clusters['pod_start_latency'].mean()
+    pod_latency = float(similar_clusters[similar_clusters['uuid'] == job_selection]['pod_start_latency'].values[0])
 
-    # print(similar_clusters[[ 'workload', 'uuid', 'pod_start_latency']])
+    pod_start_latency = model_data_world(similar_clusters, 'pod_start_latency')
+    pod_start_ltcy_grade_scale = config.get_thresholds("", "", "pod_start_latency", pod_start_latency['pod_start_latency'])
 
-    st.metric(
-        label = _("POD_LATENCY"),
-        value = round(pod_latency, 2),
-        delta = round(pod_latency - pod_latency_agg, 2),
-        delta_color = 'inverse',
+    # Display elements
+    st.markdown("""---""")
+    st.header(_("POD_LATENCY_Q_TITLE"))
+
+    latency_col_1, latency_col_2 = st.columns(2)
+
+    with latency_col_1:
+        st.markdown("##### " + _("POD_LATENCY" + pod_start_ltcy_grade_scale.get_msg_suffix(float(pod_latency))))
+
+    with latency_col_2:
+        st.metric(
+            label = _("POD_LATENCY"),
+            value = round(pod_latency, 2),
+            delta = round(pod_latency - pod_start_ltcy_grade_scale.great_hi, 2),
+            delta_color = 'inverse',
+            help = _("POD_LATENCY_EXPLANATION")
+        )
+
+
+    p1 = histogram_w_highlights(
+        df=pod_start_latency,
+        job_selection=job_selection,
+        kpi='pod_start_latency',
+        highlights=pod_start_ltcy_grade_scale,
+        bins = 60,
+        title = _("POD_START_LATENCY_TITLE")
     )
+    st.plotly_chart(p1)
 
     with st.expander(_("POD_LATENCY_ADVANCED")):
 
-        pod_start_ltcy_bins = st.slider(_("POD_START_LATENCY_BINS"), min_value=1,max_value=40, value=22)
-        pod_start_latency = model_data_world(similar_clusters, 'pod_start_latency')
-        pod_start_ltcy_grade_scale = config.get_thresholds("", "", "pod_start_latency", pod_start_latency['pod_start_latency'])
-
-        print(pod_start_latency.columns)
-
-        p1 = histogram_w_highlights(
-            df=pod_start_latency,
-            job_selection=job_selection,
-            kpi='pod_start_latency',
-            highlights=pod_start_ltcy_grade_scale,
-            bins = pod_start_ltcy_bins,
-            title = _("POD_START_LATENCY_TITLE")
-        )
-        st.plotly_chart(p1)
-        #st.plotly_chart(p1)
+        st.markdown("TODO")
 
 
-
-
-    # st.markdown('Etcd Health')
+    # ========================================================= #
+    # Etcd health section
+    # ========================================================= #
 
     # df_og['etcd_health']
     etcdf = similar_clusters[[
@@ -366,15 +381,30 @@ def main():
 
     # st.plotly_chart(p_etcd)
 
-    etcd_health_score = etcdf[etcdf['uuid'] == job_selection]['health_score'].values[0]
+    etcd_health_grade_scale = config.get_thresholds("", "", "etcd_health", etcdf['health_score'])
+
+    etcd_health_score = float(etcdf[etcdf['uuid'] == job_selection]['health_score'].values[0])
     etcd_health_score_agg = etcdf['health_score'].mean()
 
-    st.metric(
-        label=_("ETCD_HEALTH_CHECKS_PASSED"),
-        value = str(round(etcd_health_score, 2)) + ' (out of 4)',
-        delta = round(etcd_health_score - etcd_health_score_agg, 2),
-        delta_color = 'normal'
-    )
+
+    st.markdown("""---""")
+
+    st.header(_("ETCD_HEALTH_Q_TITLE"))
+
+
+    etcd_col_1, etcd_col_2 = st.columns(2)
+
+    with etcd_col_1:
+        st.markdown("##### " + _("ETCD_HEALTH" + etcd_health_grade_scale.get_msg_suffix(float(etcd_health_score))))
+
+    with etcd_col_2:
+
+        st.metric(
+            label=_("ETCD_HEALTH_CHECKS_PASSED"),
+            value = str(round(etcd_health_score, 2)) + ' (out of 4)',
+            delta = round(float(etcd_health_grade_scale.great_lo) - etcd_health_score, 1),
+            delta_color = 'normal'
+        )
 
 
 
@@ -384,30 +414,38 @@ def main():
 
 
     with st.expander(_("ETCD_HEALTH_ADVANCED")):
-        etcd_write_dur_bins = st.slider(_("SYNC_DURATION_BINS"), min_value=1,max_value=40, value=22)
         etcd_write_dur = model_data_world(similar_clusters, 'p99thetcddiskwalfsyncdurationseconds_avg')
+        etcd_write_dur_value = float(etcd_write_dur[etcd_write_dur['uuid'] == job_selection]['p99thetcddiskwalfsyncdurationseconds_avg'].values[0])
         etcd_writes_dur_grade_scale = config.get_thresholds("", "", "etcd_disk_sync_duration",
             etcd_write_dur['p99thetcddiskwalfsyncdurationseconds_avg'])
+
+        st.markdown("##### " + _("FSYNC_DURATION" + etcd_writes_dur_grade_scale.get_msg_suffix(etcd_write_dur_value)))
+
+
         p2 = histogram_w_highlights(
             df=etcd_write_dur,
             job_selection=job_selection,
             kpi='p99thetcddiskwalfsyncdurationseconds_avg',
             highlights=etcd_writes_dur_grade_scale,
-            bins = etcd_write_dur_bins,
+            bins = 40,
             title = _("SYNC_DURATION_CHART_TITLE")
         )
         st.plotly_chart(p2)
 
+        st.markdown("""---""")
 
-        etcd_leader_chg_rate_bins = st.slider(_("LEADER_RATE_CHANGE_BINS"), min_value=1,max_value=40, value=22)
         etcd_leader_chg_rate = model_data_world(similar_clusters, 'etcdleaderchangesrate_max')
+        etcd_leader_chg_rate_value = float(etcd_leader_chg_rate[etcd_leader_chg_rate['uuid'] == job_selection]['etcdleaderchangesrate_max'].values[0])
         etcd_leader_chg_rate_grade_scale = config.get_thresholds("", "", "etcd_leader_change_rate", etcd_leader_chg_rate['etcdleaderchangesrate_max'])
+
+        st.markdown("##### " + _("ETCD_LEADER_CHANGES" + etcd_leader_chg_rate_grade_scale.get_msg_suffix(etcd_leader_chg_rate_value)))
+
         p3 = histogram_w_highlights(
             df=etcd_leader_chg_rate,
             job_selection=job_selection,
             kpi='etcdleaderchangesrate_max',
             highlights=etcd_leader_chg_rate_grade_scale,
-            bins = etcd_leader_chg_rate_bins,
+            bins = 20,
             title = _("LEADER_CHANGE_RATE_CHART_TITLE")
         )
         st.plotly_chart(p3)
