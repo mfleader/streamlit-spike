@@ -389,7 +389,7 @@ def main():
 
     st.markdown("""---""")
 
-    st.title(_("ETCD_HEALTH_Q_TITLE"))
+    st.header(_("ETCD_HEALTH_Q_TITLE"))
 
 
     etcd_col_1, etcd_col_2 = st.columns(2)
