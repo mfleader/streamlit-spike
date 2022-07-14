@@ -41,6 +41,9 @@ msgstr "Platform"
 msgid "CNI_METRIC"
 msgstr "Container Network Interface (CNI)"
 
+msgid "CONTROL_NODES_TYPE_METRIC"
+msgstr "Control Node Type"
+
 # Main section
 
 msgid "DIFF_INSTANCE_Q_TITLE"

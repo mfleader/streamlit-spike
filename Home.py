@@ -54,7 +54,7 @@ def get_engine():
             f"{st.secrets['database']['port']}/"
             f"{st.secrets['database']['name']}"),
         connect_args = {
-            "options": '-c statement_timeout=10'
+            "options": '-c statement_timeout=20'
         }
         # echo = True
     )
@@ -67,7 +67,7 @@ from model import Run_Metrics
 def histogram_w_highlights(df: pd.DataFrame, job_selection: str, bins, kpi: str, highlights: PerformanceRange, title=None ):
 
     # print(df[kpi])
-    selected_job_result = df[df['uuid'] == job_selection][kpi][0]
+    selected_job_result = df[df['uuid'] == job_selection][kpi].values[0]
 
     # Calculate histogram
     counts, bins = np.histogram(df[kpi], bins=60)
@@ -180,7 +180,7 @@ def main():
 
     with data_src_sidebar_container:
         st.subheader(_("DATA_SOURCES_TITLE"))
-        selected_datasource = st.radio(_("SELECT_DATASOURCE"), ("PostgreSQL DB", "CSV"))
+        selected_datasource = st.radio(_("SELECT_DATASOURCE"), ("CSV", "PostgreSQL DB"))
 
         if selected_datasource == "PostgreSQL DB":
             engine = get_engine()
@@ -202,10 +202,10 @@ def main():
         job_uuids = df_og['uuid'].values.tolist()
 
 
-    job_selection = st.selectbox(
-        _("SELECT_UUID"),
-        options=job_uuids,
-    )
+        job_selection = st.selectbox(
+            _("SELECT_UUID"),
+            options=job_uuids,
+        )
 
 
     # st.markdown("""---""")
@@ -262,9 +262,8 @@ def main():
             value = cluster_selection_df['platform'].values[0]
         )
         st.metric(
-            # label = _("NODE_SIZE"),
-            label = 'Node Size',
-            value = cluster_selection_df['worker_nodes_type'].values[0]
+            label = _("CONTROL_NODES_TYPE_METRIC"),
+            value = cluster_selection_df['master_nodes_type'].values[0]
         )
 
 
@@ -323,6 +322,8 @@ def main():
         pod_start_latency = model_data_world(similar_clusters, 'pod_start_latency')
         pod_start_ltcy_grade_scale = config.get_thresholds("", "", "pod_start_latency", pod_start_latency['pod_start_latency'])
 
+        print(pod_start_latency.columns)
+
         p1 = histogram_w_highlights(
             df=pod_start_latency,
             job_selection=job_selection,
@@ -377,10 +378,9 @@ def main():
 
 
 
-    print(similar_clusters[[ 'workload', 'uuid', 'p99thetcddiskwalfsyncdurationseconds_avg']])
-
-    print(similar_clusters[[ 'workload', 'uuid', 'etcdleaderchangesrate_max']])
-    print('=============================================')
+    # print(similar_clusters[[ 'workload', 'uuid', 'p99thetcddiskwalfsyncdurationseconds_avg']])
+    # print(similar_clusters[[ 'workload', 'uuid', 'etcdleaderchangesrate_max']])
+    # print('=============================================')
 
 
     with st.expander(_("ETCD_HEALTH_ADVANCED")):
