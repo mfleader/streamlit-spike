@@ -101,7 +101,6 @@ def histogram_w_highlights(df: pd.DataFrame, job_selection: str, bins, kpi: str,
     )
     return fig
 
-import math
 
 def simulated_draws(sample: pd.Series, n_draws: int = 10_000):
     summary = sample.describe()
@@ -199,7 +198,7 @@ def main():
     # Different instance section
     # ========================================================= #
     st.header(_("DIFF_INSTANCE_Q_TITLE"))
-    control_nodes_col, worker_nodes_col,  = st.columns(2)
+    worker_nodes_col, control_nodes_col  = st.columns(2)
 
     ec2_instance_data = pd.DataFrame(
         data = [
@@ -231,34 +230,15 @@ def main():
     )
 
 
-
     cluster = similar_clusters[similar_clusters['uuid'] == job_selection]
-
     control_cpu = cluster['nodecpu_masters_avg'].values[0]
-    control_mem = cluster['nodememoryutilization_workers_avg'].values[0] / 1073741824
     worker_cpu = cluster['nodecpu_workers_avg'].values[0]
     worker_mem = cluster['nodememoryutilization_workers_avg'].values[0] / 1073741824
 
-
-
-    # print(df2.columns)
-
-    # print(df2[['uuid', 'platform', 'instance_type', 'vcpu', 'memory']])
-
-    # control_cpu_agg = similar_clusters['nodecpu_masters_avg'].mean()
-
-    # worker_cpu_agg = similar_clusters['nodecpu_workers_avg'].mean()
-    control_cpu_delta = control_cpu - ec2_instance_data.loc[
+    control_cpu_delta = control_cpu - .85 * ec2_instance_data.loc[
             ( ec2_instance_data['platform'] == cluster['platform'].values[0] ) &
             ( ec2_instance_data['instance_type'] == cluster['master_nodes_type'].values[0] )
         ]['vcpu'].values[0]
-
-    # print(control_cpu_delta)
-
-    control_mem_delta = control_mem - .85 * ec2_instance_data.loc[
-            ( ec2_instance_data['platform'] == cluster['platform'].values[0] ) &
-            ( ec2_instance_data['instance_type'] == cluster['worker_nodes_type'].values[0] )
-        ]['memory'].values[0]
 
     worker_cpu_delta = worker_cpu - .85 * ec2_instance_data.loc[
             ( ec2_instance_data['platform'] == cluster['platform'].values[0] ) &
@@ -269,20 +249,6 @@ def main():
             ( ec2_instance_data['platform'] == cluster['platform'].values[0] ) &
             ( ec2_instance_data['instance_type'] == cluster['worker_nodes_type'].values[0] )
         ]['memory'].values[0]
-
-    with control_nodes_col:
-        st.metric(
-            label = _("CONTROL_NODE_CPU"),
-            value = round(control_cpu,2),
-            delta = round(control_cpu_delta, 2),
-            delta_color = 'inverse',
-        )
-        st.metric(
-            label = _("CONTROL_NODE_MEM"),
-            value = str(round(control_mem, 2)) + ' GiB',
-            delta = round(control_mem_delta, 2),
-            delta_color = 'inverse'
-        )
 
     with worker_nodes_col:
         st.metric(
@@ -297,6 +263,16 @@ def main():
             delta = round(worker_mem_delta, 2),
             delta_color = 'inverse'
         )
+
+    with control_nodes_col:
+        st.metric(
+            label = _("CONTROL_NODE_CPU"),
+            value = round(control_cpu,2),
+            delta = round(control_cpu_delta, 2),
+            delta_color = 'inverse',
+        )
+
+
 
     # ========================================================= #
     # Pod latency section
