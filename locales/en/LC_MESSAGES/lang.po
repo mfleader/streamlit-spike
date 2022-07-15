@@ -103,13 +103,27 @@ msgstr "etcd Leader Change Rate"
 # ================================================== #
 # Explanations for metrics
 
+# Instance type
+
+msgid "INSTANCES_SUFFICIENT"
+msgstr "<span style=\"color: rgb(9, 171, 59);\">Your instances appear to be sufficient for your workload.</span>"
+
+msgid "INSTANCES_POOR"
+msgstr "<span style=\"color: red;\">One or more of the instances are near max utilization. See below for more details.</span>"
+
+msgid "INSTANCE_SUGGESTIONS_TITLE"
+msgstr "Instance Suggestions"
+
+msgid "INSTANCE_SUGGESTIONS"
+msgstr "Here are some instances that provide more resources that may help resolve the high resource utilization problems."
+
 # Pod latency
 
 msgid "POD_LATENCY_EXPLANATION"
 msgstr "Pod latency is how long it takes a pod to start up (after being scheduled) while the cluster is under load."
 
 msgid "POD_LATENCY_GOOD"
-msgstr "Pods are taking the expected amount of time to start."
+msgstr "<span style=\"color: rgb(9, 171, 59);\">Pods are taking the expected amount of time to start.</span>"
 
 msgid "POD_LATENCY_BELOW_EXPECTATIONS"
 msgstr "Pods are taking a little too long to start. This could mean resources are strained."
@@ -124,13 +138,13 @@ msgid "ETCD_HEALTH_EXPLANATION"
 msgstr "Etcd is a critical component of distributed system like OpenShift."
 
 msgid "ETCD_HEALTH_GOOD"
-msgstr "Etcd is passing all included health checks."
+msgstr "<span style=\"color: rgb(9, 171, 59);\">Etcd is passing all included health checks.</span>"
 
 msgid "ETCD_HEALTH_BELOW_EXPECTATIONS"
-msgstr "Etcd is failing some health checks! Cluster performance may be degraded. See the advanced metrics for more info."
+msgstr "<span style=\"color: #ffcb00\">Etcd is failing some health checks! Cluster performance may be degraded. See the advanced metrics for more info.</span>"
 
 msgid "ETCD_HEALTH_BAD"
-msgstr "Etcd is failing all included health metrics! Cluster performance will be degraded. See the advanced metrics for more info."
+msgstr "<span style=\"color: red\">Etcd is failing all included health metrics! Cluster performance will be degraded. See the advanced metrics for more info.</span>"
 
 
 # etcd fsync duration
@@ -139,13 +153,13 @@ msgid "FSYNC_DURATION_EXPLANATION"
 msgstr "How long it takes to sync etcd log entries to the disk storage."
 
 msgid "FSYNC_DURATION_GOOD"
-msgstr "Sync durations are within expectations."
+msgstr "<span style=\"color: rgb(9, 171, 59);\">Sync durations are within expectations.</span>"
 
 msgid "FSYNC_DURATION_BELOW_EXPECTATIONS"
-msgstr "Sync durations are taking longer than usual. This could indicate disk issues that could lead to request latency and destabilization of the cluster."
+msgstr "<span style=\"color: #ffcb00\">Sync durations are taking longer than usual. This could indicate disk issues that could lead to request latency and destabilization of the cluster."
 
 msgid "FSYNC_DURATION_BAD"
-msgstr "Sync durations are taking too long. This indicates disk issues that could lead to request latency and destabilization of the cluster."
+msgstr "<span style=\"color: red\">Sync durations are taking too long. This indicates disk issues that could lead to request latency and destabilization of the cluster.</span>"
 
 # etcd leader changes
 
@@ -153,12 +167,12 @@ msgid "ETCD_LEADER_CHANGES_EXPLANATION"
 msgstr "Etcd is supposed to always have a leader. Leader changes indicate that there is a performance or stability issue with the leader."
 
 msgid "ETCD_LEADER_CHANGES_GOOD"
-msgstr "Etcd leader changes are within expectations."
+msgstr "<span style=\"color: rgb(9, 171, 59);\">Etcd leader changes are within expectations.</span>"
 
 msgid "ETCD_LEADER_CHANGES_BELOW_EXPECTATIONS"
-msgstr "Etcd leaders changes are greater than expected. The performance may be degraded, and the etcd leader may be less stable."
+msgstr "<span style=\"color: #ffcb00\">Etcd leaders changes are greater than expected. The performance may be degraded, and the etcd leader may be less stable.</span>"
 
 msgid "ETCD_LEADER_CHANGES_BAD"
-msgstr "Etcd leader changes are happening rapidly. The performance is likely significantly degraded and the leader could be unstable."
+msgstr "<span style=\"color: red\">Etcd leader changes are happening rapidly. The performance is likely significantly degraded and the leader could be unstable.</span>"
 
 
