@@ -5,6 +5,7 @@ import sqlmodel as sqm
 from sqlalchemy.exc import OperationalError
 from sqlmodel import select
 from PerformanceRange import PerformanceRange
+import instance_data
 import gettext
 import config
 import plotly.express as px
@@ -200,53 +201,28 @@ def main():
     st.header(_("DIFF_INSTANCE_Q_TITLE"))
     worker_nodes_col, control_nodes_col  = st.columns(2)
 
-    ec2_instance_data = pd.DataFrame(
-        data = [
-            {
-                'platform': 'ROSA',
-                'instance_type': 'm5.4xlarge',
-                'vcpu': 16,
-                'memory': 64,
-            },
-            {
-                'platform': 'ROSA',
-                'instance_type': 'm5.2xlarge',
-                'vcpu': 8,
-                'memory': 32,
-            },
-            {
-                'platform': 'AWS',
-                'instance_type': 'm5.2xlarge',
-                'vcpu': 8,
-                'memory': 32,
-            },
-            {
-                'platform': 'AWS',
-                'instance_type': 'r5.4xlarge',
-                'vcpu': 16,
-                'memory': 128
-            }
-        ]
-    )
-
+    ec2_instance_data = instance_data.get_instance_data()
 
     cluster = similar_clusters[similar_clusters['uuid'] == job_selection]
     control_cpu = cluster['nodecpu_masters_avg'].values[0]
     worker_cpu = cluster['nodecpu_workers_avg'].values[0]
     worker_mem = cluster['nodememoryutilization_workers_avg'].values[0] / 1073741824
+    platform = cluster['platform'].values[0].lower()
+    if platform == "rosa":
+        platform = "aws"
 
     control_cpu_delta = control_cpu - .85 * ec2_instance_data.loc[
-            ( ec2_instance_data['platform'] == cluster['platform'].values[0] ) &
+            ( ec2_instance_data['platform'] == platform ) &
             ( ec2_instance_data['instance_type'] == cluster['master_nodes_type'].values[0] )
         ]['vcpu'].values[0]
 
     worker_cpu_delta = worker_cpu - .85 * ec2_instance_data.loc[
-            ( ec2_instance_data['platform'] == cluster['platform'].values[0] ) &
+            ( ec2_instance_data['platform'] == platform ) &
             ( ec2_instance_data['instance_type'] == cluster['worker_nodes_type'].values[0] )
         ]['vcpu'].values[0]
 
     worker_mem_delta = worker_mem - .85 * ec2_instance_data.loc[
-            ( ec2_instance_data['platform'] == cluster['platform'].values[0] ) &
+            ( ec2_instance_data['platform'] == platform ) &
             ( ec2_instance_data['instance_type'] == cluster['worker_nodes_type'].values[0] )
         ]['memory'].values[0]
 
@@ -294,7 +270,7 @@ def main():
     latency_col_1, latency_col_2 = st.columns(2)
 
     with latency_col_1:
-        st.markdown("##### " + _("POD_LATENCY" + pod_start_ltcy_grade_scale.get_msg_suffix(float(pod_latency))))
+        st.markdown("##### " + _("POD_LATENCY" + pod_start_ltcy_grade_scale.get_msg_suffix(float(pod_latency))), unsafe_allow_html=True)
 
     with latency_col_2:
         st.metric(
@@ -354,7 +330,7 @@ def main():
     etcd_col_1, etcd_col_2 = st.columns(2)
 
     with etcd_col_1:
-        st.markdown("##### " + _("ETCD_HEALTH" + etcd_health_grade_scale.get_msg_suffix(float(etcd_health_score))))
+        st.markdown("##### " + _("ETCD_HEALTH" + etcd_health_grade_scale.get_msg_suffix(float(etcd_health_score))), unsafe_allow_html=True)
 
     with etcd_col_2:
 
@@ -373,7 +349,7 @@ def main():
         etcd_writes_dur_grade_scale = config.get_thresholds("", "", "etcd_disk_sync_duration",
             etcd_write_dur['p99thetcddiskwalfsyncdurationseconds_avg'])
 
-        st.markdown("##### " + _("FSYNC_DURATION" + etcd_writes_dur_grade_scale.get_msg_suffix(etcd_write_dur_value)))
+        st.markdown("##### " + _("FSYNC_DURATION" + etcd_writes_dur_grade_scale.get_msg_suffix(etcd_write_dur_value)), unsafe_allow_html=True)
 
 
         p2 = histogram_w_highlights(
@@ -392,7 +368,7 @@ def main():
         etcd_leader_chg_rate_value = float(etcd_leader_chg_rate[etcd_leader_chg_rate['uuid'] == job_selection]['etcdleaderchangesrate_max'].values[0])
         etcd_leader_chg_rate_grade_scale = config.get_thresholds("", "", "etcd_leader_change_rate", etcd_leader_chg_rate['etcdleaderchangesrate_max'])
 
-        st.markdown("##### " + _("ETCD_LEADER_CHANGES" + etcd_leader_chg_rate_grade_scale.get_msg_suffix(etcd_leader_chg_rate_value)))
+        st.markdown("##### " + _("ETCD_LEADER_CHANGES" + etcd_leader_chg_rate_grade_scale.get_msg_suffix(etcd_leader_chg_rate_value)), unsafe_allow_html=True)
 
         p3 = histogram_w_highlights(
             df=etcd_leader_chg_rate,
