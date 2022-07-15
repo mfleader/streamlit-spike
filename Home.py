@@ -101,7 +101,6 @@ def histogram_w_highlights(df: pd.DataFrame, job_selection: str, bins, kpi: str,
     )
     return fig
 
-import math
 
 def simulated_draws(sample: pd.Series, n_draws: int = 10_000):
     summary = sample.describe()
