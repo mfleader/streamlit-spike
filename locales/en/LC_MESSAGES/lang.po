@@ -55,6 +55,12 @@ msgstr "Worker Node CPU Usage"
 msgid "CONTROL_NODE_CPU"
 msgstr "Control Node CPU Usage"
 
+msgid "CONTROL_NODE_MEM"
+msgstr "Control Node Memory Usage"
+
+msgid "WORKER_NODE_MEM"
+msgstr "Worker Node Memory Usage"
+
 msgid "POD_LATENCY_Q_TITLE"
 msgstr "Are pods starting as expected?"
 
