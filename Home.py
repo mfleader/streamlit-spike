@@ -227,7 +227,6 @@ def main():
             ( ec2_instance_data['instance_type'] == cluster['worker_nodes_type'].values[0] )
         ]['memory'].values[0]
 
-
     suggested = st.expander('Instance Suggestion')
 
     control_series = ec2_instance_data.loc[
