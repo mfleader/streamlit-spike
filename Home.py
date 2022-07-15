@@ -202,6 +202,7 @@ def main():
     worker_nodes_col, control_nodes_col  = st.columns(2)
 
     ec2_instance_data = instance_data.get_instance_data()
+    ec2_instance_data['memory'] = ec2_instance_data['memory'] / 1024
 
     cluster = similar_clusters[similar_clusters['uuid'] == job_selection]
     control_cpu = cluster['nodecpu_masters_avg'].values[0]
@@ -225,6 +226,61 @@ def main():
             ( ec2_instance_data['platform'] == platform ) &
             ( ec2_instance_data['instance_type'] == cluster['worker_nodes_type'].values[0] )
         ]['memory'].values[0]
+
+
+    suggested = st.expander('Instance Suggestion')
+
+    control_series = ec2_instance_data.loc[
+        ec2_instance_data['instance_type'] == cluster['master_nodes_type'].values[0]
+    ]['series'].values[0]
+    control_vcpu = ec2_instance_data.loc[
+        ec2_instance_data['instance_type'] == cluster['master_nodes_type'].values[0]
+    ]['vcpu'].values[0]
+    worker_series = ec2_instance_data.loc[
+        ec2_instance_data['instance_type'] == cluster['worker_nodes_type'].values[0]
+    ]['series'].values[0]
+    worker_vcpu = ec2_instance_data.loc[
+        ec2_instance_data['instance_type'] == cluster['worker_nodes_type'].values[0]
+    ]['vcpu'].values[0]
+
+    with suggested:
+        if control_cpu_delta > 0:
+            st.subheader('Suggested types for Control Nodes')
+            st.table(
+                ec2_instance_data.loc[
+                    (ec2_instance_data['series'] == control_series) &
+                    (ec2_instance_data['vcpu'] > control_vcpu)
+                ]
+            )
+        if worker_cpu_delta > 0 and worker_mem_delta < 0:
+            st.subheader('Suggested types for Workers Nodes')
+            st.table(
+                ec2_instance_data.loc[
+                    (ec2_instance_data['series'] == worker_series) &
+                    (ec2_instance_data['vcpu'] > worker_vcpu)
+                ]
+            )
+        elif worker_cpu_delta < 0 and worker_mem_delta > 0:
+            st.subheader('Suggested types for Workers Nodes')
+            st.table(
+                ec2_instance_data.loc[
+                    (ec2_instance_data['series'] == worker_series) &
+                    (ec2_instance_data['memory'] > worker_mem)
+                ]
+            )
+        elif worker_cpu_delta > 0 and worker_mem_delta > 0:
+            st.subheader('Suggested types for Workers Nodes')
+            st.table(
+                ec2_instance_data.loc[
+                    (ec2_instance_data['series'] == worker_series) &
+                    (ec2_instance_data['vcpu'] > worker_vcpu) &
+                    (ec2_instance_data['memory'] > worker_mem)
+                ]
+            )
+        else:
+            st.markdown(
+                "Don't worry about it. Your cluster's probably fine."
+            )
 
     with worker_nodes_col:
         st.metric(
