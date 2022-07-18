@@ -44,6 +44,9 @@ msgstr "Container Network Interface (CNI)"
 msgid "CONTROL_NODES_TYPE_METRIC"
 msgstr "Control Node Type"
 
+msgid "WORKER_NODES_TYPE_METRIC"
+msgstr "Worker Node Type"
+
 # Main section
 
 msgid "DIFF_INSTANCE_Q_TITLE"
@@ -105,6 +108,15 @@ msgstr "etcd Leader Change Rate"
 
 # Instance type
 
+msgid "WORKER_NODE_CPU_GRAPH_TITLE"
+msgstr "Worker Node CPU"
+
+msgid "WORKER_NODE_MEM_GRAPH_TITLE"
+msgstr "Worker Node Memory"
+
+msgid "CONTROL_NODE_CPU_GRAPH_TITLE"
+msgstr "Control Node CPU"
+
 msgid "INSTANCES_SUFFICIENT"
 msgstr "<span style=\"color: rgb(9, 171, 59);\">Your instances appear to be sufficient for your workload.</span>"
 
@@ -116,6 +128,12 @@ msgstr "Instance Suggestions"
 
 msgid "INSTANCE_SUGGESTIONS"
 msgstr "Here are some instances that provide more resources that may help resolve the high resource utilization problems."
+
+msgid "CONTROL_INSTANCE_SUGGESTIONS"
+msgstr "Suggested types for Control Nodes"
+
+msgid "WORKER_INSTANCE_SUGGESTIONS"
+msgstr "Suggested types for Workers Nodes"
 
 # Pod latency
 

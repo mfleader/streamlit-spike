@@ -22,13 +22,12 @@ def get_larger_instances(df: pd.DataFrame, to_match: str, greater_cpu: bool, gre
     existing_instance = df[df.instance_type == to_match]
     if len(existing_instance) == 0:
         # Empty
+        print("Existing instance not found")
         return pd.DataFrame(columns=["platform", "series", "instance_type", "vcpu", "memory"])
     else:
         existing_instance = existing_instance.values[0]
-    print(existing_instance)
 
     series = existing_instance[1]
-    instance_type = existing_instance[2]
     vcpu = existing_instance[3]
     mem = existing_instance[4]
 
@@ -36,14 +35,12 @@ def get_larger_instances(df: pd.DataFrame, to_match: str, greater_cpu: bool, gre
     min_mem = mem
     min_vcpu = vcpu
     if greater_mem:
-        min_mem += 1024
+        min_mem += 1
     if greater_cpu:
         min_vcpu += 1
-    result = df[(df.instance_type != instance_type)&(df.series == series)&(df.vcpu >= min_vcpu)&(df.memory_mb >= min_mem)]
+    print("Looking")
+    result = df.loc[(df.series == series)&(df.vcpu >= min_vcpu)&(df.memory >= min_mem)]
     result = result.sort_values(by=["vcpu", "memory"])
     return result
 
 
-#df = get_instance_data()
-#print(df)
-#print(get_larger_instances(df, "m5.4xlarge", False, False))
