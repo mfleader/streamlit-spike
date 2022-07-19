@@ -357,6 +357,7 @@ def main():
     # Etcd health data
     # Fsync duration
     etcd_write_dur_values = model_data_world(similar_clusters, 'p99thetcddiskwalfsyncdurationseconds_avg')
+    etcd_write_dur_values["p99thetcddiskwalfsyncdurationseconds_avg"] = etcd_write_dur_values["p99thetcddiskwalfsyncdurationseconds_avg"].apply(lambda x: x * 1000) # Convert to ms
     etcd_write_dur_value = float(etcd_write_dur_values[etcd_write_dur_values['uuid'] == job_selection]['p99thetcddiskwalfsyncdurationseconds_avg'].values[0])
     etcd_writes_dur_grade_scale = config.get_thresholds("", "", "etcd_disk_sync_duration",
         etcd_write_dur_values['p99thetcddiskwalfsyncdurationseconds_avg'])
@@ -368,11 +369,14 @@ def main():
 
     # Round trip latency
     etcd_rtt_values = model_data_world(similar_clusters, 'p99thetcdroundtriptimeseconds_avg')
+    etcd_rtt_values["p99thetcdroundtriptimeseconds_avg"] = etcd_rtt_values["p99thetcdroundtriptimeseconds_avg"].apply(lambda x: x * 1000) # Convert to ms
     etcd_rtt_value = float(etcd_rtt_values[etcd_leader_chg_rate_values['uuid'] == job_selection]['p99thetcdroundtriptimeseconds_avg'].values[0])
     etcd_rtt_grade_scale = config.get_thresholds("", "", "p99_etcd_rtt_avg", etcd_rtt_values['p99thetcdroundtriptimeseconds_avg'])
 
     # Commit duration
     etcd_commit_dur_values = model_data_world(similar_clusters, 'p99thetcddiskbackendcommitdurationseconds_avg')
+    etcd_commit_dur_values["p99thetcddiskbackendcommitdurationseconds_avg"] = \
+        etcd_commit_dur_values["p99thetcddiskbackendcommitdurationseconds_avg"].apply(lambda x: x * 1000) # Convert to ms
     etcd_commit_dur_value = float(etcd_commit_dur_values[etcd_commit_dur_values['uuid'] == job_selection]['p99thetcddiskbackendcommitdurationseconds_avg'].values[0])
     etcd_commit_dur_grade_scale = config.get_thresholds("", "", "p99_etcd_commit_dur_avg", etcd_commit_dur_values['p99thetcddiskbackendcommitdurationseconds_avg'])
 
@@ -411,7 +415,19 @@ def main():
 
     with st.expander(_("ETCD_HEALTH_ADVANCED")):
 
-        st.markdown("##### " + _("FSYNC_DURATION" + etcd_writes_dur_grade_scale.get_msg_suffix(etcd_write_dur_value)), unsafe_allow_html=True)
+        fsync_col_1, fsync_col_2 = st.columns(2)
+
+        with fsync_col_1:
+            st.markdown("##### " + _("FSYNC_DURATION" + etcd_writes_dur_grade_scale.get_msg_suffix(etcd_write_dur_value)), unsafe_allow_html=True)
+
+        with fsync_col_2:
+            st.metric(
+                label = _("SYNC_DURATION_CHART_TITLE"),
+                value = str(round(etcd_write_dur_value, 1)) + ' ms',
+                delta = round(etcd_write_dur_value - etcd_writes_dur_grade_scale.great_hi, 1),
+                delta_color = 'inverse',
+                help = _("POD_LATENCY_EXPLANATION")
+            )
 
 
         p2 = histogram_w_highlights(
@@ -426,7 +442,19 @@ def main():
 
         st.markdown("""---""")
 
-        st.markdown("##### " + _("ETCD_LEADER_CHANGES" + etcd_leader_chg_rate_grade_scale.get_msg_suffix(etcd_leader_chg_rate_value)), unsafe_allow_html=True)
+        leader_changes_col_1, leader_changes_col_2 = st.columns(2)
+
+        with leader_changes_col_1:
+            st.markdown("##### " + _("ETCD_LEADER_CHANGES" + etcd_leader_chg_rate_grade_scale.get_msg_suffix(etcd_leader_chg_rate_value)), unsafe_allow_html=True)
+
+        with leader_changes_col_2:
+            st.metric(
+                label = _("LEADER_CHANGE_RATE_CHART_TITLE"),
+                value = str(etcd_leader_chg_rate_value),
+                delta = round(etcd_leader_chg_rate_value - etcd_leader_chg_rate_grade_scale.great_hi, 4),
+                delta_color = 'inverse',
+                help = _("ETCD_LEADER_CHANGES_EXPLANATION")
+            )
 
         p3 = histogram_w_highlights(
             df=etcd_leader_chg_rate_values,
@@ -440,7 +468,19 @@ def main():
 
         st.markdown("""---""")
 
-        st.markdown("##### " + _("ETCD_RTT" + etcd_rtt_grade_scale.get_msg_suffix(etcd_rtt_value)), unsafe_allow_html=True)
+        rtt_col_1, rtt_col_2 = st.columns(2)
+
+        with rtt_col_1:
+            st.markdown("##### " + _("ETCD_RTT" + etcd_rtt_grade_scale.get_msg_suffix(etcd_rtt_value)), unsafe_allow_html=True)
+
+        with rtt_col_2:
+            st.metric(
+                label = _("ETCD_RTT_CHART_TITLE"),
+                value = str(round(etcd_rtt_value, 1)) + ' ms',
+                delta = round(etcd_rtt_value - etcd_rtt_grade_scale.great_hi, 1),
+                delta_color = 'inverse',
+                help = _("ETCD_RTT_EXPLANATION")
+            )
 
         p4 = histogram_w_highlights(
             df=etcd_rtt_values,
@@ -454,7 +494,19 @@ def main():
 
         st.markdown("""---""")
 
-        st.markdown("##### " + _("ETCD_COMMIT_DUR" + etcd_commit_dur_grade_scale.get_msg_suffix(etcd_commit_dur_value)), unsafe_allow_html=True)
+        commit_dur_col_1, commit_dur_col_2 = st.columns(2)
+
+        with commit_dur_col_1:
+            st.markdown("##### " + _("ETCD_COMMIT_DUR" + etcd_commit_dur_grade_scale.get_msg_suffix(etcd_commit_dur_value)), unsafe_allow_html=True)
+
+        with commit_dur_col_2:
+            st.metric(
+                label = _("ETCD_COMMIT_DUR_CHART_TITLE"),
+                value = str(round(etcd_commit_dur_value, 1)) + ' ms',
+                delta = round(etcd_commit_dur_value - etcd_commit_dur_grade_scale.great_hi, 1),
+                delta_color = 'inverse',
+                help = _("ETCD_COMMIT_DUR_EXPLANATION")
+            )
 
         p5 = histogram_w_highlights(
             df=etcd_commit_dur_values,
