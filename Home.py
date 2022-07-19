@@ -352,25 +352,40 @@ def main():
     # Etcd health section
     # ========================================================= #
 
-    # df_og['etcd_health']
-    etcdf = similar_clusters[[
-    'uuid',
-    'p99thetcdroundtriptimeseconds_avg',
-    'p99thetcddiskbackendcommitdurationseconds_avg',
-    'p99thetcddiskwalfsyncdurationseconds_avg',
-    'etcdleaderchangesrate_max'
-    ]]
+    etcd_health_grade_scale = config.get_thresholds("", "", "etcd_health", None)
 
-    etcdf.loc[:,'health_score'] = etcdf[[ 'p99thetcdroundtriptimeseconds_avg',
-    'p99thetcddiskbackendcommitdurationseconds_avg',
-    'p99thetcddiskwalfsyncdurationseconds_avg',
-    'etcdleaderchangesrate_max']].apply(lambda x: x <= x.quantile(q=.5)).astype(int).apply(pd.DataFrame.sum, axis=1)
+    # Etcd health data
+    # Fsync duration
+    etcd_write_dur_values = model_data_world(similar_clusters, 'p99thetcddiskwalfsyncdurationseconds_avg')
+    etcd_write_dur_value = float(etcd_write_dur_values[etcd_write_dur_values['uuid'] == job_selection]['p99thetcddiskwalfsyncdurationseconds_avg'].values[0])
+    etcd_writes_dur_grade_scale = config.get_thresholds("", "", "etcd_disk_sync_duration",
+        etcd_write_dur_values['p99thetcddiskwalfsyncdurationseconds_avg'])
 
+    # Leader changes
+    etcd_leader_chg_rate_values = model_data_world(similar_clusters, 'etcdleaderchangesrate_max')
+    etcd_leader_chg_rate_value = float(etcd_leader_chg_rate_values[etcd_leader_chg_rate_values['uuid'] == job_selection]['etcdleaderchangesrate_max'].values[0])
+    etcd_leader_chg_rate_grade_scale = config.get_thresholds("", "", "etcd_leader_change_rate", etcd_leader_chg_rate_values['etcdleaderchangesrate_max'])
 
-    etcd_health_grade_scale = config.get_thresholds("", "", "etcd_health", etcdf['health_score'])
+    # Round trip latency
+    etcd_rtt_values = model_data_world(similar_clusters, 'p99thetcdroundtriptimeseconds_avg')
+    etcd_rtt_value = float(etcd_rtt_values[etcd_leader_chg_rate_values['uuid'] == job_selection]['p99thetcdroundtriptimeseconds_avg'].values[0])
+    etcd_rtt_grade_scale = config.get_thresholds("", "", "p99_etcd_rtt_avg", etcd_rtt_values['p99thetcdroundtriptimeseconds_avg'])
 
-    etcd_health_score = float(etcdf[etcdf['uuid'] == job_selection]['health_score'].values[0])
-    etcd_health_score_agg = etcdf['health_score'].mean()
+    # Commit duration
+    etcd_commit_dur_values = model_data_world(similar_clusters, 'p99thetcddiskbackendcommitdurationseconds_avg')
+    etcd_commit_dur_value = float(etcd_commit_dur_values[etcd_commit_dur_values['uuid'] == job_selection]['p99thetcddiskbackendcommitdurationseconds_avg'].values[0])
+    etcd_commit_dur_grade_scale = config.get_thresholds("", "", "p99_etcd_commit_dur_avg", etcd_commit_dur_values['p99thetcddiskbackendcommitdurationseconds_avg'])
+
+    etcd_health_score = 0
+
+    if etcd_write_dur_value < etcd_writes_dur_grade_scale.great_hi:
+        etcd_health_score += 1
+    if etcd_leader_chg_rate_value < etcd_leader_chg_rate_grade_scale.great_hi:
+        etcd_health_score += 1
+    if etcd_rtt_value < etcd_rtt_grade_scale.great_hi:
+        etcd_health_score += 1
+    if etcd_commit_dur_value < etcd_commit_dur_grade_scale.great_hi:
+        etcd_health_score += 1
 
 
     st.markdown("""---""")
@@ -388,23 +403,19 @@ def main():
         st.metric(
             label=_("ETCD_HEALTH_CHECKS_PASSED"),
             value = str(round(etcd_health_score, 2)) + ' (out of 4)',
-            delta = round(float(etcd_health_grade_scale.great_lo) - etcd_health_score, 1),
+            delta = round(float(etcd_health_grade_scale.great_hi) - etcd_health_score, 1),
             delta_color = 'normal'
         )
 
 
 
     with st.expander(_("ETCD_HEALTH_ADVANCED")):
-        etcd_write_dur = model_data_world(similar_clusters, 'p99thetcddiskwalfsyncdurationseconds_avg')
-        etcd_write_dur_value = float(etcd_write_dur[etcd_write_dur['uuid'] == job_selection]['p99thetcddiskwalfsyncdurationseconds_avg'].values[0])
-        etcd_writes_dur_grade_scale = config.get_thresholds("", "", "etcd_disk_sync_duration",
-            etcd_write_dur['p99thetcddiskwalfsyncdurationseconds_avg'])
 
         st.markdown("##### " + _("FSYNC_DURATION" + etcd_writes_dur_grade_scale.get_msg_suffix(etcd_write_dur_value)), unsafe_allow_html=True)
 
 
         p2 = histogram_w_highlights(
-            df=etcd_write_dur,
+            df=etcd_write_dur_values,
             job_selection=job_selection,
             kpi='p99thetcddiskwalfsyncdurationseconds_avg',
             highlights=etcd_writes_dur_grade_scale,
@@ -415,14 +426,10 @@ def main():
 
         st.markdown("""---""")
 
-        etcd_leader_chg_rate = model_data_world(similar_clusters, 'etcdleaderchangesrate_max')
-        etcd_leader_chg_rate_value = float(etcd_leader_chg_rate[etcd_leader_chg_rate['uuid'] == job_selection]['etcdleaderchangesrate_max'].values[0])
-        etcd_leader_chg_rate_grade_scale = config.get_thresholds("", "", "etcd_leader_change_rate", etcd_leader_chg_rate['etcdleaderchangesrate_max'])
-
         st.markdown("##### " + _("ETCD_LEADER_CHANGES" + etcd_leader_chg_rate_grade_scale.get_msg_suffix(etcd_leader_chg_rate_value)), unsafe_allow_html=True)
 
         p3 = histogram_w_highlights(
-            df=etcd_leader_chg_rate,
+            df=etcd_leader_chg_rate_values,
             job_selection=job_selection,
             kpi='etcdleaderchangesrate_max',
             highlights=etcd_leader_chg_rate_grade_scale,
@@ -430,6 +437,34 @@ def main():
             title = _("LEADER_CHANGE_RATE_CHART_TITLE")
         )
         st.plotly_chart(p3)
+
+        st.markdown("""---""")
+
+        st.markdown("##### " + _("ETCD_RTT" + etcd_rtt_grade_scale.get_msg_suffix(etcd_rtt_value)), unsafe_allow_html=True)
+
+        p4 = histogram_w_highlights(
+            df=etcd_rtt_values,
+            job_selection=job_selection,
+            kpi='p99thetcdroundtriptimeseconds_avg',
+            highlights=etcd_rtt_grade_scale,
+            bins = 20,
+            title = _("ETCD_RTT_CHART_TITLE")
+        )
+        st.plotly_chart(p4)
+
+        st.markdown("""---""")
+
+        st.markdown("##### " + _("ETCD_COMMIT_DUR" + etcd_commit_dur_grade_scale.get_msg_suffix(etcd_commit_dur_value)), unsafe_allow_html=True)
+
+        p5 = histogram_w_highlights(
+            df=etcd_commit_dur_values,
+            job_selection=job_selection,
+            kpi='p99thetcddiskbackendcommitdurationseconds_avg',
+            highlights=etcd_commit_dur_grade_scale,
+            bins = 20,
+            title = _("ETCD_COMMIT_DUR_CHART_TITLE")
+        )
+        st.plotly_chart(p5)
 
 
 

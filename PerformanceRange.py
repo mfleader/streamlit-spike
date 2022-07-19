@@ -13,8 +13,12 @@ class PerformanceRange:
     color: str = 'inverse'
 
     def __init__(self, sr: pd.Series):
-        self.great_lo = sr.min()
-        self.bad_hi = sr.max()
+        if (sr is not None):
+            self.great_lo = sr.min()
+            self.bad_hi = sr.max()
+        else:
+            self.great_lo = 0
+            self.great_hi = 0
 
     def __str__(self):
         return (

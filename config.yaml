@@ -11,10 +11,10 @@ thresholds:
         poor_high: 7000
         bad_high: -1 # Max value
       etcd_health:
-        great_low: 0
-        great_high: 0.5
-        poor_high: 5
-        bad_high: -1 # Max value
+        great_low: 3.5
+        great_high: 4
+        poor_high: 3
+        bad_high: 0 # Max value
       etcd_disk_sync_duration:
         great_low: 0
         great_high: 0.005
@@ -25,3 +25,13 @@ thresholds:
         great_high: 1
         poor_high: 3
         bad_high: 4 # Max value
+      p99_etcd_rtt_avg:
+        great_low: 0
+        great_high: 15
+        poor_high: 25
+        bad_high: -1
+      p99_etcd_commit_dur_avg:
+        great_low: 0
+        great_high: 12
+        poor_high: 20
+        bad_high: -1
