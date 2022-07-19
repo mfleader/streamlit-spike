@@ -104,17 +104,10 @@ msgid "LEADER_CHANGE_RATE_CHART_TITLE"
 msgstr "etcd Leader Change Rate"
 
 msgid "ETCD_RTT_CHART_TITLE"
-<<<<<<< Updated upstream
 msgstr "etcd Round Trip Time (ms)"
 
 msgid "ETCD_COMMIT_DUR_CHART_TITLE"
 msgstr "etcd Commit Duration (ms)"
-=======
-msgstr "etcd Round Trip Time"
-
-msgid "ETCD_COMMIT_DUR_CHART_TITLE"
-msgstr "etcd Commit Duration"
->>>>>>> Stashed changes
 
 
 
@@ -214,7 +207,6 @@ msgid "ETCD_RTT_EXPLANATION"
 msgstr "This is the minimum time to finish an etcd request."
 
 msgid "ETCD_RTT_GOOD"
-<<<<<<< Updated upstream
 msgstr "<span style=\"color: rgb(9, 171, 59);\">Average etcd Round Trip Time is within expectations.</span>"
 
 msgid "ETCD_RTT_EXPECTATIONS"
@@ -222,15 +214,6 @@ msgstr "<span style=\"color: #ffcb00\">Average etcd Round Trip Time is greater t
 
 msgid "ETCD_RTT_BAD"
 msgstr "<span style=\"color: red\">Average etcd Round Trip Time is much greater than expected. The performance is degraded. This could be caused by disk, network, or other resource constraints. For more information see the <a href=\"https://etcd.io/docs/latest/op-guide/performance/\">etcd webpage on the manner.</a></span>"
-=======
-msgstr "<span style=\"color: rgb(9, 171, 59);\">Etcd Round Trip Time is within expectations.</span>"
-
-msgid "ETCD_RTT_EXPECTATIONS"
-msgstr "<span style=\"color: #ffcb00\">Etcd Round Trip Time is greater than expected. The performance may be degraded. This could be caused by disk, network, or other resource constraints. For more information see the <a href=\"https://etcd.io/docs/latest/op-guide/performance/\">etcd webpage on the manner.</a></span>"
-
-msgid "ETCD_RTT_BAD"
-msgstr "<span style=\"color: red\">Etcd Round Trip Time is much greater than expected. The performance is degraded. This could be caused by disk, network, or other resource constraints. For more information see the <a href=\"https://etcd.io/docs/latest/op-guide/performance/\">etcd webpage on the manner.</a></span>"
->>>>>>> Stashed changes
 
 # etcd commit duration
 
@@ -238,7 +221,6 @@ msgid "ETCD_COMMIT_DUR_EXPLANATION"
 msgstr "How long it takes to commit an incremental snapshot of the most recent changes to disk."
 
 msgid "ETCD_COMMIT_DUR_GOOD"
-<<<<<<< Updated upstream
 msgstr "<span style=\"color: rgb(9, 171, 59);\">Average Commit duration is within expectations.</span>"
 
 msgid "ETCD_COMMIT_DUR_EXPECTATIONS"
@@ -246,13 +228,4 @@ msgstr "<span style=\"color: #ffcb00\">Commits taking longer than usual. This co
 
 msgid "ETCD_COMMIT_DUR_BAD"
 msgstr "<span style=\"color: red\">Commit durations are too long. This indicates disk issues that could lead to request latency and destabilization of the cluster.</span>"
-=======
-msgstr "<span style=\"color: rgb(9, 171, 59);\">Commit durations are within expectations.</span>"
-
-msgid "ETCD_COMMIT_DUR_EXPECTATIONS"
-msgstr "<span style=\"color: #ffcb00\">Commit durations are taking longer than usual. This could indicate disk issues that could lead to request latency and destabilization of the cluster.</span>"
-
-msgid "ETCD_COMMIT_DUR_BAD"
-msgstr "<span style=\"color: red\">Commit durations are taking too long. This indicates disk issues that could lead to request latency and destabilization of the cluster.</span>"
->>>>>>> Stashed changes
 
