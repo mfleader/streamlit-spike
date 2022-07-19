@@ -407,7 +407,7 @@ def main():
         st.metric(
             label=_("ETCD_HEALTH_CHECKS_PASSED"),
             value = str(round(etcd_health_score, 2)) + ' (out of 4)',
-            delta = round(float(etcd_health_grade_scale.great_hi) - etcd_health_score, 1),
+            delta = round(etcd_health_score - float(etcd_health_grade_scale.great_hi), 1),
             delta_color = 'normal'
         )
 

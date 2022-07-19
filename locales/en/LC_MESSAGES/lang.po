@@ -209,7 +209,7 @@ msgstr "This is the minimum time to finish an etcd request."
 msgid "ETCD_RTT_GOOD"
 msgstr "<span style=\"color: rgb(9, 171, 59);\">Average etcd Round Trip Time is within expectations.</span>"
 
-msgid "ETCD_RTT_EXPECTATIONS"
+msgid "ETCD_RTT_BELOW_EXPECTATIONS"
 msgstr "<span style=\"color: #ffcb00\">Average etcd Round Trip Time is greater than expected. The performance may be degraded. This could be caused by disk, network, or other resource constraints. For more information see the <a href=\"https://etcd.io/docs/latest/op-guide/performance/\">etcd webpage on the manner.</a></span>"
 
 msgid "ETCD_RTT_BAD"
@@ -223,7 +223,7 @@ msgstr "How long it takes to commit an incremental snapshot of the most recent c
 msgid "ETCD_COMMIT_DUR_GOOD"
 msgstr "<span style=\"color: rgb(9, 171, 59);\">Average Commit duration is within expectations.</span>"
 
-msgid "ETCD_COMMIT_DUR_EXPECTATIONS"
+msgid "ETCD_COMMIT_DUR_BELOW_EXPECTATIONS"
 msgstr "<span style=\"color: #ffcb00\">Commits taking longer than usual. This could indicate disk issues that could lead to request latency and destabilization of the cluster.</span>"
 
 msgid "ETCD_COMMIT_DUR_BAD"
