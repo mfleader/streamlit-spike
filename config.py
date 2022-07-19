@@ -44,7 +44,12 @@ def get_thresholds(metric: str, sr: pd.Series = None, platform: str ='default', 
     # return range
     t = get_config().get(f"thresholds.default.default.{metric}")
 
-    return PerformanceRange(**t, max_value = sr.max())
+    if sr is not None:
+        max_value = sr.max()
+    else:
+        max_value = t['great_hi']
+
+    return PerformanceRange(**t, max_value = max_value)
 
 
 # if __name__ == '__main__':
