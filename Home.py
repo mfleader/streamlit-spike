@@ -5,9 +5,11 @@ import sqlmodel as sqm
 from sqlalchemy.exc import OperationalError
 from sqlmodel import select
 from PerformanceRange import PerformanceRange
+import instance_data
 import gettext
 import config
 import plotly.express as px
+import plotly.graph_objects as go
 
 from scipy.stats import lognorm, norm, invgauss, invgamma, gamma
 
@@ -101,6 +103,28 @@ def histogram_w_highlights(df: pd.DataFrame, job_selection: str, bins, kpi: str,
     )
     return fig
 
+def resource_gauge(available, current, peak, title, unit):
+    fig = go.Figure(go.Indicator(
+        number = {'suffix': unit},
+        domain = {'x': [0, 1], 'y': [0, 1]},
+        value = current,
+        mode = "gauge+number+delta",
+        title = {'text': title},
+        delta = {'reference': available * 0.85, 'increasing': {'color': "Red"}, 'decreasing': {'color': "Green"}},
+        gauge = {
+             'axis': {'range': [None, available]},
+             'steps' : [
+                 {'range': [0, available * 0.75], 'color': "limegreen"},
+                 {'range': [available * 0.75, available * 0.85], 'color': "yellow"},
+                 {'range': [available * 0.85, available], 'color': "red"},
+                 {'range': [0, available], 'color': "#262730", 'thickness': 0.6},
+                 {'range': [current, current], 'thickness': 0.6, 'line': {'color': 'white', 'width': 1}}
+              ],
+             'bar': {'color': '#636efa', 'thickness': 0.35},
+             'threshold': {'line': {'color': "#636efa", 'width': 3}, 'thickness': 0.1, 'value': peak}
+        }))
+    fig.update_layout(height=200, width=300, margin=dict(l=40, r=20, t=40, b=20))
+    return fig
 
 def simulated_draws(sample: pd.Series, n_draws: int = 10_000):
     summary = sample.describe()
@@ -124,7 +148,7 @@ def model_data_world(df: pd.DataFrame, kpi: str):
 def main():
 
     st.set_page_config(
-        layout="wide", page_icon="🖱️", page_title="OpenShift KPIs"
+        layout="centered", page_icon="🖱️", page_title="OpenShift KPIs"
     )
 
     st.title(_("DASHBOARD_TITLE"))
@@ -192,6 +216,10 @@ def main():
             label = _("CONTROL_NODES_TYPE_METRIC"),
             value = cluster_selection_df['master_nodes_type'].values[0]
         )
+        st.metric(
+            label = _("WORKER_NODES_TYPE_METRIC"),
+            value = cluster_selection_df['worker_nodes_type'].values[0]
+        )
 
 
     # ========================================================= #
@@ -200,78 +228,75 @@ def main():
     st.header(_("DIFF_INSTANCE_Q_TITLE"))
     worker_nodes_col, control_nodes_col  = st.columns(2)
 
-    ec2_instance_data = pd.DataFrame(
-        data = [
-            {
-                'platform': 'ROSA',
-                'instance_type': 'm5.4xlarge',
-                'vcpu': 16,
-                'memory': 64,
-            },
-            {
-                'platform': 'ROSA',
-                'instance_type': 'm5.2xlarge',
-                'vcpu': 8,
-                'memory': 32,
-            },
-            {
-                'platform': 'AWS',
-                'instance_type': 'm5.2xlarge',
-                'vcpu': 8,
-                'memory': 32,
-            },
-            {
-                'platform': 'AWS',
-                'instance_type': 'r5.4xlarge',
-                'vcpu': 16,
-                'memory': 128
-            }
-        ]
-    )
-
+    ec2_instance_data = instance_data.get_instance_data()
+    ec2_instance_data['memory'] = ec2_instance_data['memory'] / 1024
 
     cluster = similar_clusters[similar_clusters['uuid'] == job_selection]
     control_cpu = cluster['nodecpu_masters_avg'].values[0]
     worker_cpu = cluster['nodecpu_workers_avg'].values[0]
     worker_mem = cluster['nodememoryutilization_workers_avg'].values[0] / 1073741824
+    control_cpu_max = cluster['nodecpu_masters_max'].values[0]
+    worker_cpu_max = cluster['nodecpu_workers_max'].values[0]
+    worker_mem_max = cluster['nodememoryutilization_workers_max'].values[0] / 1073741824
+    platform = cluster['platform'].values[0].lower()
+    if platform == "rosa":
+        platform = "aws"
 
-    control_cpu_delta = control_cpu - .85 * ec2_instance_data.loc[
-            ( ec2_instance_data['platform'] == cluster['platform'].values[0] ) &
+    master_node_cpu = ec2_instance_data.loc[
+            ( ec2_instance_data['platform'] == platform ) &
             ( ec2_instance_data['instance_type'] == cluster['master_nodes_type'].values[0] )
         ]['vcpu'].values[0]
-
-    worker_cpu_delta = worker_cpu - .85 * ec2_instance_data.loc[
-            ( ec2_instance_data['platform'] == cluster['platform'].values[0] ) &
+    control_cpu_delta = control_cpu - 0.85 * master_node_cpu
+    worker_node_cpu = ec2_instance_data.loc[
+            ( ec2_instance_data['platform'] == platform ) &
             ( ec2_instance_data['instance_type'] == cluster['worker_nodes_type'].values[0] )
         ]['vcpu'].values[0]
-
-    worker_mem_delta = worker_mem - .85 * ec2_instance_data.loc[
-            ( ec2_instance_data['platform'] == cluster['platform'].values[0] ) &
+    worker_cpu_delta = worker_cpu - 0.85 * worker_node_cpu
+    worker_node_mem = ec2_instance_data.loc[
+            ( ec2_instance_data['platform'] == platform ) &
             ( ec2_instance_data['instance_type'] == cluster['worker_nodes_type'].values[0] )
         ]['memory'].values[0]
+    worker_mem_delta = worker_mem - 0.85 * worker_node_mem
+
+    if control_cpu_delta > 0 or worker_cpu_delta > 0 or worker_mem_delta > 0:
+        st.markdown("##### " + _("INSTANCES_POOR"), unsafe_allow_html=True)
+        suggested = st.expander(_("INSTANCE_SUGGESTIONS_TITLE"))
+
+        with suggested:
+            st.markdown(_("INSTANCE_SUGGESTIONS"))
+            hide_table_row_index = '''
+                <style>
+                tbody th {display:none}
+                .blank {display:none}
+                </style>
+                '''
+            st.markdown(hide_table_row_index, unsafe_allow_html=True)
+            if control_cpu_delta > 0:
+                instance_type = cluster_selection_df['master_nodes_type'].values[0]
+                st.subheader(_("CONTROL_INSTANCE_SUGGESTIONS"))
+                st.table(
+                    instance_data.get_larger_instances(ec2_instance_data, instance_type, True, False).drop(columns=["series"])
+                )
+            if worker_cpu_delta > 0 or worker_mem_delta > 0:
+                instance_type = cluster_selection_df['worker_nodes_type'].values[0]
+                st.subheader(_("WORKER_INSTANCE_SUGGESTIONS"))
+                st.table(
+                    instance_data.get_larger_instances(ec2_instance_data, instance_type,
+                        worker_cpu_delta > 0, worker_mem_delta > 0).drop(columns=["series"])
+                )
+    else:
+        st.markdown("##### " + _("INSTANCES_SUFFICIENT"), unsafe_allow_html=True)
 
     with worker_nodes_col:
-        st.metric(
-            label = _("WORKER_NODE_CPU"),
-            value = round(worker_cpu,2),
-            delta = round(worker_cpu_delta,2),
-            delta_color = 'inverse',
-        )
-        st.metric(
-            label = _("WORKER_NODE_MEM"),
-            value = str(round(worker_mem, 2)) + ' GiB',
-            delta = round(worker_mem_delta, 2),
-            delta_color = 'inverse'
-        )
+        g1 = resource_gauge(worker_node_cpu, worker_cpu, worker_cpu_max, _("WORKER_NODE_CPU_GRAPH_TITLE"), " Cores")
+        st.plotly_chart(g1)
+
+        g2 = resource_gauge(worker_node_mem, round(worker_mem, 2), worker_mem_max, _("WORKER_NODE_MEM_GRAPH_TITLE"), " GiB")
+        st.plotly_chart(g2)
 
     with control_nodes_col:
-        st.metric(
-            label = _("CONTROL_NODE_CPU"),
-            value = round(control_cpu,2),
-            delta = round(control_cpu_delta, 2),
-            delta_color = 'inverse',
-        )
-
+        g3 = resource_gauge(master_node_cpu, round(control_cpu, 2), control_cpu_max, _("CONTROL_NODE_CPU_GRAPH_TITLE"), " Cores")
+        st.plotly_chart(g3)
 
 
     # ========================================================= #
@@ -294,7 +319,7 @@ def main():
     latency_col_1, latency_col_2 = st.columns(2)
 
     with latency_col_1:
-        st.markdown("##### " + _("POD_LATENCY" + pod_start_ltcy_grade_scale.get_msg_suffix(float(pod_latency))))
+        st.markdown("##### " + _("POD_LATENCY" + pod_start_ltcy_grade_scale.get_msg_suffix(float(pod_latency))), unsafe_allow_html=True)
 
     with latency_col_2:
         st.metric(
@@ -354,7 +379,7 @@ def main():
     etcd_col_1, etcd_col_2 = st.columns(2)
 
     with etcd_col_1:
-        st.markdown("##### " + _("ETCD_HEALTH" + etcd_health_grade_scale.get_msg_suffix(float(etcd_health_score))))
+        st.markdown("##### " + _("ETCD_HEALTH" + etcd_health_grade_scale.get_msg_suffix(float(etcd_health_score))), unsafe_allow_html=True)
 
     with etcd_col_2:
 
@@ -373,7 +398,7 @@ def main():
         etcd_writes_dur_grade_scale = config.get_thresholds("", "", "etcd_disk_sync_duration",
             etcd_write_dur['p99thetcddiskwalfsyncdurationseconds_avg'])
 
-        st.markdown("##### " + _("FSYNC_DURATION" + etcd_writes_dur_grade_scale.get_msg_suffix(etcd_write_dur_value)))
+        st.markdown("##### " + _("FSYNC_DURATION" + etcd_writes_dur_grade_scale.get_msg_suffix(etcd_write_dur_value)), unsafe_allow_html=True)
 
 
         p2 = histogram_w_highlights(
@@ -392,7 +417,7 @@ def main():
         etcd_leader_chg_rate_value = float(etcd_leader_chg_rate[etcd_leader_chg_rate['uuid'] == job_selection]['etcdleaderchangesrate_max'].values[0])
         etcd_leader_chg_rate_grade_scale = config.get_thresholds("", "", "etcd_leader_change_rate", etcd_leader_chg_rate['etcdleaderchangesrate_max'])
 
-        st.markdown("##### " + _("ETCD_LEADER_CHANGES" + etcd_leader_chg_rate_grade_scale.get_msg_suffix(etcd_leader_chg_rate_value)))
+        st.markdown("##### " + _("ETCD_LEADER_CHANGES" + etcd_leader_chg_rate_grade_scale.get_msg_suffix(etcd_leader_chg_rate_value)), unsafe_allow_html=True)
 
         p3 = histogram_w_highlights(
             df=etcd_leader_chg_rate,
