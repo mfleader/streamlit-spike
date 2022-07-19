@@ -80,9 +80,9 @@ def histogram_w_highlights(df: pd.DataFrame, job_selection: str, bins, kpi: str,
     # Create bar gragh
     fig = px.bar(x=bins, y=counts, height=220, labels={ "x": kpi, "y": "count"}, title=title)
     # Add graphics to show performance
-    fig.add_shape(type="rect", x0=highlights.great_lo, y0=highlight_min, x1=highlights.great_hi, y1=highlight_max, fillcolor="limegreen")
-    fig.add_shape(type="rect", x0=highlights.great_hi, y0=highlight_min, x1=highlights.poor_hi, y1=highlight_max, fillcolor="yellow")
-    fig.add_shape(type="rect", x0=highlights.poor_hi, y0=highlight_min, x1=highlights.bad_hi, y1=highlight_max, fillcolor="red")
+    fig.add_shape(type="rect", x0=highlights.great_lo, y0=highlight_min, x1=highlights.great_hi, y1=highlight_max, fillcolor="limegreen", line_width=0)
+    fig.add_shape(type="rect", x0=highlights.great_hi, y0=highlight_min, x1=highlights.poor_hi, y1=highlight_max, fillcolor="yellow", line_width=0)
+    fig.add_shape(type="rect", x0=highlights.poor_hi, y0=highlight_min, x1=highlights.bad_hi, y1=highlight_max, fillcolor="red", line_width=0)
     fig.add_annotation(text="Good", x = good_x, y=text_position, textangle=0, xanchor='left', showarrow=False,
         font=dict(size=15, color="black"))
     fig.add_annotation(text="Poor", x = poor_x, y=text_position, textangle=0, xanchor='left', showarrow=False,
