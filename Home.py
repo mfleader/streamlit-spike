@@ -312,7 +312,7 @@ def main():
     pod_latency = float(similar_clusters[similar_clusters['uuid'] == job_selection]['pod_start_latency'].values[0])
 
     pod_start_latency = model_data_world(similar_clusters, 'pod_start_latency')
-    pod_start_ltcy_grade_scale = config.get_thresholds("", "", "pod_start_latency", pod_start_latency['pod_start_latency'])
+    pod_start_ltcy_grade_scale = config.get_thresholds(metric = "pod_start_latency", sr = pod_start_latency['pod_start_latency'])
 
     # Display elements
     st.markdown("""---""")
@@ -352,33 +352,33 @@ def main():
     # Etcd health section
     # ========================================================= #
 
-    etcd_health_grade_scale = config.get_thresholds("", "", "etcd_health", None)
+    etcd_health_grade_scale = config.get_thresholds(metric="etcd_health")
 
     # Etcd health data
     # Fsync duration
     etcd_write_dur_values = model_data_world(similar_clusters, 'p99thetcddiskwalfsyncdurationseconds_avg')
     etcd_write_dur_values["p99thetcddiskwalfsyncdurationseconds_avg"] = etcd_write_dur_values["p99thetcddiskwalfsyncdurationseconds_avg"].apply(lambda x: x * 1000) # Convert to ms
     etcd_write_dur_value = float(etcd_write_dur_values[etcd_write_dur_values['uuid'] == job_selection]['p99thetcddiskwalfsyncdurationseconds_avg'].values[0])
-    etcd_writes_dur_grade_scale = config.get_thresholds("", "", "etcd_disk_sync_duration",
+    etcd_writes_dur_grade_scale = config.get_thresholds("p99thetcddiskwalfsyncdurationseconds_avg",
         etcd_write_dur_values['p99thetcddiskwalfsyncdurationseconds_avg'])
 
     # Leader changes
     etcd_leader_chg_rate_values = model_data_world(similar_clusters, 'etcdleaderchangesrate_max')
     etcd_leader_chg_rate_value = float(etcd_leader_chg_rate_values[etcd_leader_chg_rate_values['uuid'] == job_selection]['etcdleaderchangesrate_max'].values[0])
-    etcd_leader_chg_rate_grade_scale = config.get_thresholds("", "", "etcd_leader_change_rate", etcd_leader_chg_rate_values['etcdleaderchangesrate_max'])
+    etcd_leader_chg_rate_grade_scale = config.get_thresholds("etcdleaderchangesrate_max", etcd_leader_chg_rate_values['etcdleaderchangesrate_max'])
 
     # Round trip latency
     etcd_rtt_values = model_data_world(similar_clusters, 'p99thetcdroundtriptimeseconds_avg')
     etcd_rtt_values["p99thetcdroundtriptimeseconds_avg"] = etcd_rtt_values["p99thetcdroundtriptimeseconds_avg"].apply(lambda x: x * 1000) # Convert to ms
     etcd_rtt_value = float(etcd_rtt_values[etcd_leader_chg_rate_values['uuid'] == job_selection]['p99thetcdroundtriptimeseconds_avg'].values[0])
-    etcd_rtt_grade_scale = config.get_thresholds("", "", "p99_etcd_rtt_avg", etcd_rtt_values['p99thetcdroundtriptimeseconds_avg'])
+    etcd_rtt_grade_scale = config.get_thresholds("p99thetcdroundtriptimeseconds_avg", etcd_rtt_values['p99thetcdroundtriptimeseconds_avg'])
 
     # Commit duration
     etcd_commit_dur_values = model_data_world(similar_clusters, 'p99thetcddiskbackendcommitdurationseconds_avg')
     etcd_commit_dur_values["p99thetcddiskbackendcommitdurationseconds_avg"] = \
         etcd_commit_dur_values["p99thetcddiskbackendcommitdurationseconds_avg"].apply(lambda x: x * 1000) # Convert to ms
     etcd_commit_dur_value = float(etcd_commit_dur_values[etcd_commit_dur_values['uuid'] == job_selection]['p99thetcddiskbackendcommitdurationseconds_avg'].values[0])
-    etcd_commit_dur_grade_scale = config.get_thresholds("", "", "p99_etcd_commit_dur_avg", etcd_commit_dur_values['p99thetcddiskbackendcommitdurationseconds_avg'])
+    etcd_commit_dur_grade_scale = config.get_thresholds("p99thetcdroundtriptimeseconds_avg", etcd_commit_dur_values['p99thetcddiskbackendcommitdurationseconds_avg'])
 
     etcd_health_score = 0
 
@@ -517,9 +517,6 @@ def main():
             title = _("ETCD_COMMIT_DUR_CHART_TITLE")
         )
         st.plotly_chart(p5)
-
-
-
 
 
 
