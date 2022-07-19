@@ -6,6 +6,9 @@ def get_config():
     with open('config.yaml', 'r') as f:
         return yaml.load(f, Loader=yaml.FullLoader)
 
+def get_datasource():
+    return get_config()["settings"]["datasource"]
+
 def get_thresholds(platform: str, cni: str, metric: str, sr: pd.Series):
     thresholds = get_config()["thresholds"]
     if platform not in thresholds:

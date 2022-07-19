@@ -49,7 +49,7 @@ def get_engine():
             f"{st.secrets['database']['port']}/"
             f"{st.secrets['database']['name']}"),
         connect_args = {
-            "options": '-c statement_timeout=20'
+            "options": '-c statement_timeout=200'
         }
         # echo = True
     )
@@ -151,31 +151,33 @@ def main():
         layout="centered", page_icon="🖱️", page_title="OpenShift KPIs"
     )
 
+    datasource = config.get_datasource()
+
+    if datasource == "postgresql":
+        engine = get_engine()
+        session = next(get_session(engine))
+
+        job_uuids = session.exec(
+            select(Run_Metrics.uuid)
+        ).all()
+        data = session.exec(
+            select(Run_Metrics)
+        ).all()
+        df_og = pd.DataFrame.from_records(
+            (d.dict() for d in data)
+        )
+    elif datasource == "csv":
+        df_og = pd.read_csv(
+            'data/run_metrics_2022-07-08.csv'
+        )
+
+
     st.title(_("DASHBOARD_TITLE"))
 
     data_src_sidebar_container = st.sidebar.container()
 
     with data_src_sidebar_container:
         st.subheader(_("DATA_SOURCES_TITLE"))
-        selected_datasource = st.radio(_("SELECT_DATASOURCE"), ("CSV", "PostgreSQL DB"))
-
-        if selected_datasource == "PostgreSQL DB":
-            engine = get_engine()
-            session = next(get_session(engine))
-
-            job_uuids = session.exec(
-                select(Run_Metrics.uuid)
-            ).all()
-            data = session.exec(
-                select(Run_Metrics)
-            ).all()
-            df_og = pd.DataFrame.from_records(
-                (d.dict() for d in data)
-            )
-        elif selected_datasource == "CSV":
-            df_og = pd.read_csv(
-                'data/run_metrics_2022-07-08.csv'
-            )
         job_uuids = df_og['uuid'].values.tolist()
 
         job_selection = st.selectbox(

@@ -1,3 +1,5 @@
+settings:
+  datasource: csv
 thresholds:
   # Platform
   default:
