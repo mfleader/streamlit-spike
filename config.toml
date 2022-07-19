@@ -1,0 +1,42 @@
+[settings]
+datasource = "csv"
+
+
+
+# [[thresholds.default.default]]
+[thresholds.default.default.pod_start_latency]
+perf_delta = "inverse"
+great_lo = 0
+great_hi = 4500
+poor_hi = 7000
+bad_hi = -1 # Max value
+[thresholds.default.default.etcd_health]
+perf_delta = "normal"
+great_hi = 4
+great_lo = 3.5
+poor_lo = 2
+bad_lo = 0 # Max value
+[thresholds.default.default.p99thetcddiskwalfsyncdurationseconds_avg]
+perf_delta = "inverse"
+great_lo = 0
+great_hi = 5
+poor_hi = 9
+bad_hi = -1 # Max value
+[thresholds.default.default.etcdleaderchangesrate_max]
+perf_delta = "inverse"
+great_lo = 0
+great_hi = 1
+poor_hi = 3
+bad_hi = 4 # Max value
+[thresholds.default.default.p99thetcdroundtriptimeseconds_avg]
+perf_delta = "inverse"
+great_lo = 0
+great_hi = 15
+poor_hi = 25
+bad_hi = -1
+[thresholds.default.default.p99thetcddiskbackendcommitdurationseconds_avg]
+perf_delta = "inverse"
+great_lo = 0
+great_hi = 12
+poor_hi = 20
+bad_hi = -1
