@@ -30,9 +30,9 @@ class PerformanceRange:
             return "_GOOD"
         elif value < self.poor_hi:
             return "_BELOW_EXPECTATIONS"
-        elif value > self.poor_hi:
+        elif value >= self.poor_hi:
             return "_BAD"
-        return None
+        return "_MISSING"
 
 class QuantilePerfRange(PerformanceRange):
 

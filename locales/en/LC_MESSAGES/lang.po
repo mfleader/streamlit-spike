@@ -144,10 +144,10 @@ msgid "POD_LATENCY_GOOD"
 msgstr "<span style=\"color: rgb(9, 171, 59);\">Pods are taking the expected amount of time to start.</span>"
 
 msgid "POD_LATENCY_BELOW_EXPECTATIONS"
-msgstr "Pods are taking a little too long to start. This could mean resources are strained."
+msgstr "<span style=\"color: #ffcb00;\">Pods are taking a little too long to start. This could mean resources are strained.</span>"
 
 msgid "POD_LATENCY_BAD"
-msgstr "Pods are taking much longer than expected to start. Resources are likely strained."
+msgstr "<span style=\"color: red\">Pods are taking much longer than expected to start. Resources are likely strained.</span>"
 
 
 # etcd health
@@ -174,7 +174,7 @@ msgid "FSYNC_DURATION_GOOD"
 msgstr "<span style=\"color: rgb(9, 171, 59);\">Sync durations are within expectations.</span>"
 
 msgid "FSYNC_DURATION_BELOW_EXPECTATIONS"
-msgstr "<span style=\"color: #ffcb00\">Sync durations are taking longer than usual. This could indicate disk issues that could lead to request latency and destabilization of the cluster."
+msgstr "<span style=\"color: #ffcb00\">Sync durations are taking longer than usual. This could indicate disk issues that could lead to request latency and destabilization of the cluster.</span>"
 
 msgid "FSYNC_DURATION_BAD"
 msgstr "<span style=\"color: red\">Sync durations are taking too long. This indicates disk issues that could lead to request latency and destabilization of the cluster.</span>"
