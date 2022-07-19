@@ -366,6 +366,7 @@ def main():
     etcd_leader_chg_rate_values = model_data_world(similar_clusters, 'etcdleaderchangesrate_max')
     etcd_leader_chg_rate_value = float(etcd_leader_chg_rate_values[etcd_leader_chg_rate_values['uuid'] == job_selection]['etcdleaderchangesrate_max'].values[0])
     etcd_leader_chg_rate_grade_scale = config.get_thresholds("etcdleaderchangesrate_max", etcd_leader_chg_rate_values['etcdleaderchangesrate_max'])
+    print(etcd_leader_chg_rate_grade_scale)
 
     # Round trip latency
     etcd_rtt_values = model_data_world(similar_clusters, 'p99thetcdroundtriptimeseconds_avg')

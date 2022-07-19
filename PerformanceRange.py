@@ -3,7 +3,6 @@ This module defines the PerformanceRange class, which defines expected performan
 """
 
 import pandas as pd
-from dataclasses import dataclass
 from typing import Optional
 
 class PerformanceRange:
@@ -14,25 +13,16 @@ class PerformanceRange:
     bad_hi: Optional[float] = None
     bad_lo: Optional[float] = None
     max_value: Optional[float] = None
+    sr: Optional[pd.Series] = None
     perf_delta: str = 'inverse'  # 'inverse', 'normal'
-
-    # def __init__(self, sr: pd.Series, perf_delta: str = 'inverse'):
-    #     self.perf_delta = perf_delta
-    #     if (sr is not None):
-    #         self.great_lo = sr.min()
-    #         self.bad_hi = sr.max()
-    #     else:
-    #         self.great_lo = 0
-    #         self.great_hi = 0
 
     def __init__(self, **kwargs):
         self.__dict__.update(kwargs)
 
-        if self.perf_delta == 'normal':
-            self.great_hi = kwargs['max_value']
-        elif self.perf_delta == 'inverse':
-            self.bad_hi = kwargs['max_value']
-
+        if self.sr is not None and self.perf_delta == 'normal' and self.sr.max() > self.great_hi:
+            self.great_hi = self.sr.max()
+        elif self.sr is not None and self.perf_delta == 'inverse' and self.sr.max() > self.bad_hi:
+            self.bad_hi = self.sr.max()
 
     def __str__(self):
         return (
